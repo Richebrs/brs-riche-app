@@ -1,19 +1,37 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BRS Riche</title>
-  <link rel="stylesheet" href="/style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🚀 BRS Riche App</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
 </head>
 <body>
   <h1>🚀 BRS Riche App</h1>
 
-  <button id="registerBtn">Inscription test</button>
-  <button id="loginBtn">Connexion test</button>
-  <button id="addDataBtn">Ajouter données Firestore</button>
+  <!-- Formulaire d'inscription -->
+  <div>
+    <h2>Inscription test</h2>
+    <input type="email" id="signup-email" placeholder="Email">
+    <input type="password" id="signup-password" placeholder="Mot de passe">
+    <button id="signup-btn">S’inscrire</button>
+  </div>
 
-  <script type="module" src="/app.js"></script>
+  <!-- Formulaire de connexion -->
+  <div>
+    <h2>Connexion test</h2>
+    <input type="email" id="login-email" placeholder="Email">
+    <input type="password" id="login-password" placeholder="Mot de passe">
+    <button id="login-btn">Se connecter</button>
+  </div>
+
+  <!-- Test Firestore -->
+  <div>
+    <h2>Ajouter données Firestore</h2>
+    <input type="text" id="data-input" placeholder="Texte à ajouter">
+    <button id="add-data-btn">Ajouter</button>
+  </div>
 </body>
-</html>
-
+  </html>
+  
