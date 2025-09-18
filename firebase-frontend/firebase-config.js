@@ -1,9 +1,9 @@
 // firebase-config.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
-// 🔹 Config sécurisée depuis .env (via Vite)
+// 🔹 Config sécurisée depuis .env
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_API_KEY,
   authDomain: import.meta.env.VITE_AUTH_DOMAIN,
@@ -20,3 +20,4 @@ const db = getFirestore(app);
 
 export { auth, db };
 
+  
