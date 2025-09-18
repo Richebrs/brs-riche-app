@@ -1,189 +1,210 @@
-
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Accueil - BRS Riche 2</title>
-
-<!-- CSS -->
+<title>Accueil - BRS Riche</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <style>
-body { font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0; background: #f4f7fb; color: #333; }
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin:0; padding:0;
+  background: #f4f7fb;
+  color: #333;
+  -webkit-user-select:none; -moz-user-select:none; user-select:none;
+  -webkit-touch-callout:none;
+  touch-action: manipulation;
+}
 #home-container { max-width: 1100px; margin:auto; padding:0 16px 60px; }
-.hero { background: linear-gradient(135deg,#0d47a1,#1976d2); color:#fff; text-align:center; padding:64px 20px; border-radius:14px; margin:24px 0 40px; }
+
+/* Google Translate */
+#google_translate_element { text-align:center; margin:12px 0; }
+
+/* HERO */
+.hero {
+  background: linear-gradient(135deg,#0d47a1,#1976d2);
+  color:#fff; text-align:center;
+  padding:64px 20px; border-radius:14px; margin:24px 0 40px;
+}
 .hero h1 { font-size:2.2em; margin:0 0 12px; }
 .hero p { font-size:1.1em; margin:0 0 22px; }
-.btn { display:inline-block; padding:14px 24px; border-radius:12px; font-weight:bold; text-decoration:none; margin:6px; transition: transform .2s, background .2s; box-shadow:0 6px 14px rgba(0,0,0,0.15); }
+.btn {
+  display:inline-block;
+  padding:14px 24px;
+  border-radius:12px;
+  font-weight:bold;
+  text-decoration:none;
+  margin:6px;
+  transition: transform .2s, background .2s;
+  box-shadow:0 6px 14px rgba(0,0,0,0.15);
+}
 .btn-primary { background:#ffcc00; color:#0d47a1; }
 .btn-outline { color:#fff; text-decoration:underline; border:2px solid #fff; }
 .btn i { margin-right:8px; }
 .btn:hover { transform:translateY(-2px); }
 
+/* SECTIONS */
 .section { padding:48px 12px; background:#fff; border-radius:14px; margin:16px 0; }
 .section h2 { font-size:1.9em; color:#0d47a1; text-align:center; margin:0 0 18px; }
+.section p { text-align:justify; line-height:1.6em; }
+
+/* CARDS */
 .cards { display:flex; flex-wrap:wrap; gap:18px; justify-content:center; margin-top:16px; }
-.card { flex:1 1 280px; max-width:340px; background:#fff; border-radius:14px; padding:22px; box-shadow:0 8px 24px rgba(0,0,0,0.08); text-align:center; transition: transform .2s; }
+.card {
+  flex:1 1 280px;
+  max-width:340px;
+  background:#fff;
+  border-radius:14px;
+  padding:22px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.08);
+  text-align:center;
+  transition: transform .2s;
+}
 .card:hover { transform:translateY(-4px); }
 .card i { font-size:1.8em; color:#0d47a1; margin-bottom:8px; }
 
-.cta { text-align:center; background:#0d47a1; color:#fff; border-radius:14px; padding:48px 16px; margin-top:28px; }
+/* CTA */
+.cta {
+  text-align:center;
+  background:#0d47a1;
+  color:#fff;
+  border-radius:14px;
+  padding:48px 16px;
+  margin-top:28px;
+}
+.cta h2 { font-size:2em; margin-bottom:12px; }
 .cta .btn-primary { background:#ffcc00; color:#0d47a1; }
 
+/* RESPONSIVE */
 @media(max-width:768px){
   .hero h1 { font-size:1.7em; }
   .btn { display:block; width:90%; max-width:300px; margin:10px auto; }
   .cards { flex-direction:column; align-items:center; }
 }
 </style>
-
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
-<!-- Config Firebase -->
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
-  authDomain: "brs-riche-2.firebaseapp.com",
-  projectId: "brs-riche-2",
-  storageBucket: "brs-riche-2.appspot.com",
-  messagingSenderId: "313874599780",
-  appId: "1:313874599780:web:TON_APP_ID"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-// Constantes
-const DAILY_RATE = 0.02;
-const REFERRAL_LEVELS = [0.15, 0.05, 0.05];
-
-// Création automatique des documents
-async function setupUser(user) {
-  if(!user) return;
-  const userRef = db.collection("users").doc(user.uid);
-  const userDoc = await userRef.get();
-  if(!userDoc.exists){
-    await userRef.set({
-      email: user.email,
-      username: user.displayName || user.email.split('@')[0],
-      role: "user",
-      balanceAvailable: 0,
-      balanceWithdrawn: 0,
-      balanceTotal: 0,
-      sponsor: null,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  }
-
-  const walletRef = db.collection("wallets").doc(user.uid);
-  if(!(await walletRef.get()).exists){
-    await walletRef.set({ balance:0, lastAppliedAt: firebase.firestore.FieldValue.serverTimestamp() });
-  }
-
-  const txRef = db.collection("transactions").doc(user.uid).collection("items");
-  if((await txRef.get()).empty){
-    await txRef.add({ type:"init", amount:0, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
-  }
-
-  const referralsRef = db.collection("referrals").doc(user.uid).collection("items");
-  if((await referralsRef.get()).empty){
-    for(let i=1;i<=3;i++){
-      await referralsRef.add({ level:i, referredUserId:null });
-    }
-  }
-
-  console.log("✅ Firestore setup terminé pour :", user.email);
-}
-
-async function deposit(userUid, amount){
-  const refWallet = db.collection('wallets').doc(userUid);
-  const refTx = db.collection('transactions').doc(userUid).collection('items').doc();
-  await db.runTransaction(async t=>{
-    const snap = await t.get(refWallet);
-    let bal = snap.exists ? Number(snap.data().balance||0) : 0;
-    bal += amount;
-    t.set(refWallet,{balance:bal,lastAppliedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    t.set(refTx,{type:'deposit',amount:amount,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-
-    let currentReferrer = (await db.collection('users').doc(userUid).get()).data().sponsor;
-    for(let i=0;i<3 && currentReferrer;i++){
-      const parentWalletRef = db.collection('wallets').doc(currentReferrer);
-      const parentTxRef = db.collection('transactions').doc(currentReferrer).collection('items').doc();
-      const parentSnap = await t.get(parentWalletRef);
-      let parentBal = parentSnap.exists ? Number(parentSnap.data().balance||0) : 0;
-      const commission = amount * REFERRAL_LEVELS[i];
-      parentBal += commission;
-      t.set(parentWalletRef,{balance:parentBal},{merge:true});
-      t.set(parentTxRef,{type:'referral_bonus',amount:commission,level:i+1,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      const parentData = await db.collection('users').doc(currentReferrer).get();
-      currentReferrer = parentData.data().sponsor;
-    }
-  });
-}
-
-async function applyGains(userUid){
-  const refWallet = db.collection('wallets').doc(userUid);
-  const refTx = db.collection('transactions').doc(userUid).collection('items').doc();
-  await db.runTransaction(async t=>{
-    const snap = await t.get(refWallet);
-    if(!snap.exists) throw new Error("Portefeuille inexistant");
-    let bal = Number(snap.data().balance||0);
-    const last = snap.data().lastAppliedAt?.toDate?.() || new Date();
-    const now = new Date();
-    const days = Math.max(1, Math.floor((now - last)/(1000*60*60*24)));
-    const gain = bal*DAILY_RATE*days;
-    bal += gain;
-    t.update(refWallet,{balance:bal,lastAppliedAt:firebase.firestore.FieldValue.serverTimestamp()});
-    t.set(refTx,{type:'profit',amount:Number(gain.toFixed(2)),createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-  });
-}
-
-// Surveiller l'état auth
-auth.onAuthStateChanged(user=>{
-  setupUser(user);
-});
-</script>
-
 </head>
-<body>
+<body oncopy="return false" oncut="return false" onpaste="return false" oncontextmenu="return false">
 
 <div id="home-container">
 
+  <!-- GOOGLE TRANSLATE -->
+  <div id="google_translate_element"></div>
+
+  <!-- HERO -->
   <header class="hero">
-    <h1>🌍 Bienvenue sur <span style="color:#ffcc00;">BRS Riche 2</span></h1>
+    <h1>🌍 Bienvenue sur <span style="color:#ffcc00;">BRS Riche</span></h1>
     <p>Une nouvelle manière d'investir : simple, sécurisé et accessible à tous 🚀</p>
     <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i>Créer un compte</a>
     <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i>Déjà membre ? Connexion</a>
   </header>
 
+  <!-- WHO WE ARE -->
   <section class="section">
     <h2>🚀 Qui sommes-nous ?</h2>
-    <p><strong>BRS Riche 2</strong> est une plateforme innovante qui transforme l’investissement en une expérience simple et transparente.</p>
+    <p><strong>BRS Riche</strong> est une plateforme innovante qui transforme l’investissement en une expérience simple et transparente. Notre objectif : rendre le revenu passif accessible à tous, même sans connaissances financières.</p>
+    <p>Pas besoin de compétences avancées en trading ou finance. Nous combinons la blockchain, la sécurité des smart contracts et une interface intuitive pour créer une expérience rentable unique.</p>
   </section>
 
+  <!-- TECHNOLOGY -->
   <section class="section">
     <h2>🛠️ Notre Technologie</h2>
     <div class="cards">
-      <div class="card"><i class="fas fa-shield-alt"></i><h3>Sécurité Blockchain</h3><p>Vos dépôts sont protégés et traçables.</p></div>
-      <div class="card"><i class="fas fa-cogs"></i><h3>Smart Contracts</h3><p>Gains calculés automatiquement.</p></div>
-      <div class="card"><i class="fas fa-chart-line"></i><h3>Dashboard</h3><p>Suivez vos gains et transactions en temps réel.</p></div>
-      <div class="card"><i class="fas fa-dollar-sign"></i><h3>Paiements USDT</h3><p>Retirez vos gains en crypto stable.</p></div>
+      <div class="card">
+        <i class="fas fa-shield-alt"></i>
+        <h3>Sécurité Blockchain</h3>
+        <p>Vos dépôts sont protégés et entièrement traçables grâce à la blockchain.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-cogs"></i>
+        <h3>Smart Contracts</h3>
+        <p>Les gains sont calculés et distribués automatiquement, sans erreur humaine.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-chart-line"></i>
+        <h3>Dashboard</h3>
+        <p>Suivez vos gains, retraits et bonus en temps réel, depuis n’importe quel appareil.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-dollar-sign"></i>
+        <h3>Paiements USDT</h3>
+        <p>Retirez vos gains en crypto stable, acceptée mondialement.</p>
+      </div>
     </div>
   </section>
 
+  <!-- INVESTMENT PLANS -->
+  <section class="section">
+    <h2>📦 Nos Plans d’Investissement</h2>
+    <p>Choisissez une stratégie selon vos objectifs :</p>
+
+    <div class="cards">
+      <div class="card">
+        <i class="fas fa-hotel"></i>
+        <h3>🏨 Chambres Quotidiennes (180 jours)</h3>
+        <p>Investissement : $10 → $800<br>Rendement quotidien : 1.5% → 5%<br>Gains payés quotidiennement, hebdomadairement et mensuellement.<br>Capital consommé, retraits possibles dès $3.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-building"></i>
+        <h3>🏢 Plan Résidence Fixe ($30)</h3>
+        <p>Choisissez la durée :<br>25 jours → +$6 → Total $36<br>45 jours → +$12 → Total $42<br>60 jours → +$24 → Total $54<br>Capital + bonus à la fin de la période.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- REFERRAL PROGRAM -->
+  <section class="section">
+    <h2>🤝 Programme de Parrainage</h2>
+    <p>Gagnez aussi grâce à vos invités :</p>
+    <ul>
+      <li>Niveau 1 : Invitations directes → commission maximale</li>
+      <li>Niveau 2 : Réseau de vos invités → revenu supplémentaire</li>
+      <li>Niveau 3 : Réseau étendu → gains passifs</li>
+    </ul>
+    <p>🎁 Bonus supplémentaires débloqués lorsque vous atteignez certains jalons.</p>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section">
+    <h2>❓ FAQ</h2>
+    <p><strong>💰 Comment commencer ?</strong> Créez un compte gratuit, choisissez votre plan et effectuez votre premier dépôt.</p>
+    <p><strong>🔒 Mon argent est-il sécurisé ?</strong> Oui, toutes les opérations sont sécurisées via blockchain et smart contracts.</p>
+    <p><strong>📈 Quand puis-je retirer mes gains ?</strong> À tout moment à partir de $3.</p>
+    <p><strong>🤝 Comment fonctionne le système de parrainage ?</strong> Vous gagnez des commissions sur 3 niveaux dès que des personnes s’inscrivent et investissent via votre lien.</p>
+  </section>
+
+  <!-- CTA -->
   <section class="cta">
     <h2>📲 Commencez aujourd’hui !</h2>
+    <p>Inscrivez-vous gratuitement, choisissez votre plan et laissez la technologie travailler pour vous.</p>
     <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i>Créer votre compte</a>
-    <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i>Déjà membre ? Connexion</a>
+    <div style="margin-top:12px;">
+      <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i>Déjà membre ? Connexion</a>
+    </div>
   </section>
 
   <footer style="text-align:center;margin-top:32px;color:#777;">
-    © 2025 BRS Riche 2
+    © 2025 BRS Riche
   </footer>
 
 </div>
+
+<!-- GOOGLE TRANSLATE SCRIPT -->
+<script type="text/javascript">
+function googleTranslateElementInit() {
+  new google.translate.TranslateElement({pageLanguage: 'fr', includedLanguages: 'en,es,de,it,zh,ar'}, 'google_translate_element');
+}
+</script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<script>
+  // Bloquer raccourcis copie/impression/zoom
+  document.addEventListener('keydown', function(e){
+    if ((e.ctrlKey || e.metaKey) && ['c','s','u','p','+','-','0'].includes(e.key.toLowerCase())) e.preventDefault();
+  });
+  document.addEventListener('wheel', function(e){ if (e.ctrlKey) e.preventDefault(); }, {passive:false});
+</script>
+
 </body>
 </html>
+
+        
