@@ -1,112 +1,127 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Inscription - BRS Riche</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  <style>
-    body { font-family:'Segoe UI',sans-serif; background:#f4f7fb; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
-    .register-container { background:#fff; padding:32px; border-radius:14px; box-shadow:0 6px 20px rgba(0,0,0,0.1); width:100%; max-width:420px; }
-    h1 { text-align:center; color:#0d47a1; margin-bottom:20px; }
-    .form-group { margin-bottom:15px; }
-    label { font-weight:600; color:#0d47a1; display:block; margin-bottom:6px; }
-    input { width:100%; padding:12px; border:1px solid #ccc; border-radius:10px; }
-    input:focus { border-color:#1976d2; outline:none; }
-    .btn { width:100%; padding:14px; border:none; border-radius:10px; font-weight:bold; font-size:1em; background:#ffcc00; color:#0d47a1; cursor:pointer; }
-    .btn:hover { opacity:0.9; }
-    .login-link { text-align:center; margin-top:14px; }
-    .login-link a { color:#1976d2; text-decoration:none; font-weight:bold; }
-  </style>
+<meta charset="UTF-8">
+<title>Inscription - BRS Riche</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin:0; padding:0;
+  background: #f4f7fb;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+#register-container {
+  background: #fff;
+  padding: 40px 32px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+h1 { color: #0d47a1; margin-bottom: 24px; }
+input[type="text"], input[type="email"], input[type="password"] {
+  width: 100%;
+  padding: 12px 14px;
+  margin: 8px 0 4px 0;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 1em;
+}
+input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
+  border-color: #1976d2;
+  outline: none;
+}
+small { display:block; margin-bottom:12px; color:#555; text-align:left; }
+button {
+  background: #ffcc00;
+  color: #0d47a1;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 16px;
+  transition: transform .2s;
+}
+button:hover { transform: translateY(-2px); }
+#message {
+  margin-top: 12px;
+  font-weight: bold;
+}
+.success { color: green; }
+.error { color: red; }
+a { color: #1976d2; text-decoration: none; margin-top: 12px; display: inline-block; }
+a:hover { text-decoration: underline; }
+</style>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+  // TODO: Remplace par ta config Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+    authDomain: "brs-riche-2.firebaseapp.com",
+    projectId: "brs-riche-2",
+    storageBucket: "brs-riche-2.appspot.com",
+    messagingSenderId: "313874599780",
+    appId: "1:313874599780:web:EXEMPLE"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+</script>
 </head>
 <body>
-  <div class="register-container">
-    <h1>Créer un compte</h1>
-    <form id="registerForm">
-      <div class="form-group">
-        <label for="fullname"><i class="fas fa-user"></i> Nom complet</label>
-        <input type="text" id="fullname" required>
-      </div>
-      <div class="form-group">
-        <label for="email"><i class="fas fa-envelope"></i> Email</label>
-        <input type="email" id="email" required>
-      </div>
-      <div class="form-group">
-        <label for="password"><i class="fas fa-lock"></i> Mot de passe</label>
-        <input type="password" id="password" required>
-      </div>
-      <div class="form-group">
-        <label for="confirm"><i class="fas fa-lock"></i> Confirmer</label>
-        <input type="password" id="confirm" required>
-      </div>
-      <div class="form-group">
-        <label for="referral"><i class="fas fa-user-friends"></i> Code de parrainage (optionnel)</label>
-        <input type="text" id="referral">
-      </div>
-      <button type="submit" class="btn">S’inscrire</button>
-    </form>
-    <div class="login-link">
-      Déjà membre ? <a href="login.html">Se connecter</a>
-    </div>
-  </div>
+<div id="register-container">
+  <h1>📝 Inscription</h1>
+  <form id="register-form">
+    <input type="text" id="name" placeholder="Nom complet" required/>
+    <small>Entrez votre nom complet.</small>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+    <input type="email" id="email" placeholder="Email" required/>
+    <small>Votre email sera utilisé pour la connexion.</small>
 
-  <script>
-    // ⚡ Configuration Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
-      authDomain: "brs-riche-2.firebaseapp.com",
-      projectId: "brs-riche-2",
-      storageBucket: "brs-riche-2.appspot.com",
-      messagingSenderId: "313874599780",
-      appId: "1:313874599780:web:1234567890abcdef"
-    };
+    <input type="password" id="password" placeholder="Mot de passe" required/>
+    <small>Minimum 6 caractères.</small>
 
-    // Initialiser Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    <button type="submit">Créer un compte</button>
+  </form>
+  <div id="message"></div>
+  <a href="login.html">Déjà membre ? Connexion</a>
+</div>
 
-    // Formulaire d’inscription
-    const form = document.getElementById("registerForm");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const fullname = document.getElementById("fullname").value;
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const confirm = document.getElementById("confirm").value;
-      const referral = document.getElementById("referral").value;
+<script>
+const form = document.getElementById('register-form');
+const message = document.getElementById('message');
 
-      if (password !== confirm) {
-        alert("❌ Les mots de passe ne correspondent pas !");
-        return;
-      }
+form.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  message.textContent = '';
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
 
-      try {
-        // Créer l’utilisateur
-        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-        const user = userCredential.user;
-
-        // Sauvegarder dans Firestore
-        await db.collection("users").doc(user.uid).set({
-          fullname: fullname,
-          email: email,
-          referral: referral || null,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        alert("✅ Compte créé avec succès !");
-        window.location.href = "login.html";
-      } catch (error) {
-        alert("Erreur : " + error.message);
-      }
+  // Création de l'utilisateur avec Firebase Auth
+  auth.createUserWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      // Mettre à jour le displayName
+      userCredential.user.updateProfile({ displayName: name });
+      message.textContent = '✅ Inscription réussie ! Redirection...';
+      message.className = 'success';
+      setTimeout(()=>{ window.location.href = 'login.html'; }, 3000);
+    })
+    .catch((error) => {
+      message.textContent = '❌ ' + error.message;
+      message.className = 'error';
     });
-  </script>
+});
+</script>
 </body>
-  </html>
-        
+</html>
