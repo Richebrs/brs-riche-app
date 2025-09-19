@@ -1,90 +1,87 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Accueil - BRS Riche</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-<style>
-body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  margin:0; padding:0;
-  background: #f4f7fb;
-  color: #333;
-  -webkit-user-select:none; -moz-user-select:none; user-select:none;
-  -webkit-touch-callout:none;
-  touch-action: manipulation;
-}
-#home-container { max-width: 1100px; margin:auto; padding:0 16px 60px; }
+  <meta charset="UTF-8">
+  <title>Accueil - BRS Riche</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin:0; padding:0;
+      background:#f4f7fb;
+      color:#333;
+      -webkit-user-select:none; -moz-user-select:none; user-select:none;
+      -webkit-touch-callout:none;
+      touch-action: manipulation;
+    }
+    #home-container { max-width: 1100px; margin:auto; padding:0 16px 60px; }
+    #google_translate_element { text-align:center; margin:12px 0; }
 
-/* Google Translate */
-#google_translate_element { text-align:center; margin:12px 0; }
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg,#0d47a1,#1976d2);
+      color:#fff; text-align:center;
+      padding:64px 20px; border-radius:14px; margin:24px 0 40px;
+    }
+    .hero h1 { font-size:2.2em; margin:0 0 12px; }
+    .hero p { font-size:1.1em; margin:0 0 22px; }
+    .btn {
+      display:inline-block;
+      padding:14px 24px;
+      border-radius:12px;
+      font-weight:bold;
+      text-decoration:none;
+      margin:6px;
+      transition: transform .2s, background .2s;
+      box-shadow:0 6px 14px rgba(0,0,0,0.15);
+    }
+    .btn-primary { background:#ffcc00; color:#0d47a1; }
+    .btn-outline { color:#fff; text-decoration:underline; border:2px solid #fff; }
+    .btn i { margin-right:8px; }
+    .btn:hover { transform:translateY(-2px); }
 
-/* HERO */
-.hero {
-  background: linear-gradient(135deg,#0d47a1,#1976d2);
-  color:#fff; text-align:center;
-  padding:64px 20px; border-radius:14px; margin:24px 0 40px;
-}
-.hero h1 { font-size:2.2em; margin:0 0 12px; }
-.hero p { font-size:1.1em; margin:0 0 22px; }
-.btn {
-  display:inline-block;
-  padding:14px 24px;
-  border-radius:12px;
-  font-weight:bold;
-  text-decoration:none;
-  margin:6px;
-  transition: transform .2s, background .2s;
-  box-shadow:0 6px 14px rgba(0,0,0,0.15);
-}
-.btn-primary { background:#ffcc00; color:#0d47a1; }
-.btn-outline { color:#fff; text-decoration:underline; border:2px solid #fff; }
-.btn i { margin-right:8px; }
-.btn:hover { transform:translateY(-2px); }
+    /* SECTIONS */
+    .section { padding:48px 12px; background:#fff; border-radius:14px; margin:16px 0; }
+    .section h2 { font-size:1.9em; color:#0d47a1; text-align:center; margin:0 0 18px; }
+    .section p { text-align:justify; line-height:1.6em; }
 
-/* SECTIONS */
-.section { padding:48px 12px; background:#fff; border-radius:14px; margin:16px 0; }
-.section h2 { font-size:1.9em; color:#0d47a1; text-align:center; margin:0 0 18px; }
-.section p { text-align:justify; line-height:1.6em; }
+    /* CARDS */
+    .cards { display:flex; flex-wrap:wrap; gap:18px; justify-content:center; margin-top:16px; }
+    .card {
+      flex:1 1 280px;
+      max-width:340px;
+      background:#fff;
+      border-radius:14px;
+      padding:22px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.08);
+      text-align:center;
+      transition: transform .2s;
+    }
+    .card:hover { transform:translateY(-4px); }
+    .card i { font-size:1.8em; color:#0d47a1; margin-bottom:8px; }
 
-/* CARDS */
-.cards { display:flex; flex-wrap:wrap; gap:18px; justify-content:center; margin-top:16px; }
-.card {
-  flex:1 1 280px;
-  max-width:340px;
-  background:#fff;
-  border-radius:14px;
-  padding:22px;
-  box-shadow:0 8px 24px rgba(0,0,0,0.08);
-  text-align:center;
-  transition: transform .2s;
-}
-.card:hover { transform:translateY(-4px); }
-.card i { font-size:1.8em; color:#0d47a1; margin-bottom:8px; }
+    /* CTA */
+    .cta {
+      text-align:center;
+      background:#0d47a1;
+      color:#fff;
+      border-radius:14px;
+      padding:48px 16px;
+      margin-top:28px;
+    }
+    .cta h2 { font-size:2em; margin-bottom:12px; }
+    .cta .btn-primary { background:#ffcc00; color:#0d47a1; }
 
-/* CTA */
-.cta {
-  text-align:center;
-  background:#0d47a1;
-  color:#fff;
-  border-radius:14px;
-  padding:48px 16px;
-  margin-top:28px;
-}
-.cta h2 { font-size:2em; margin-bottom:12px; }
-.cta .btn-primary { background:#ffcc00; color:#0d47a1; }
-
-/* RESPONSIVE */
-@media(max-width:768px){
-  .hero h1 { font-size:1.7em; }
-  .btn { display:block; width:90%; max-width:300px; margin:10px auto; }
-  .cards { flex-direction:column; align-items:center; }
-}
-</style>
+    /* RESPONSIVE */
+    @media(max-width:768px){
+      .hero h1 { font-size:1.7em; }
+      .btn { display:block; width:90%; max-width:300px; margin:10px auto; }
+      .cards { flex-direction:column; align-items:center; }
+    }
+  </style>
 </head>
 <body oncopy="return false" oncut="return false" onpaste="return false" oncontextmenu="return false">
-
 <div id="home-container">
 
   <!-- GOOGLE TRANSLATE -->
@@ -93,118 +90,108 @@ body {
   <!-- HERO -->
   <header class="hero">
     <h1>🌍 Bienvenue sur <span style="color:#ffcc00;">BRS Riche</span></h1>
-    <p>Une nouvelle manière d'investir : simple, sécurisé et accessible à tous 🚀</p>
+    <p>Investir facilement, gagner quotidiennement et bâtir un revenu durable 🚀</p>
     <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i>Créer un compte</a>
-    <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i>Déjà membre ? Connexion</a>
+    <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i>Connexion</a>
   </header>
 
-  <!-- WHO WE ARE -->
+  <!-- QUI SOMMES-NOUS -->
   <section class="section">
     <h2>🚀 Qui sommes-nous ?</h2>
-    <p><strong>BRS Riche</strong> est une plateforme innovante qui transforme l’investissement en une expérience simple et transparente. Notre objectif : rendre le revenu passif accessible à tous, même sans connaissances financières.</p>
-    <p>Pas besoin de compétences avancées en trading ou finance. Nous combinons la blockchain, la sécurité des smart contracts et une interface intuitive pour créer une expérience rentable unique.</p>
+    <p><strong>BRS RICHE</strong> est une plateforme d’investissement moderne qui permet à chacun de générer des revenus passifs grâce à des plans simples et transparents.</p>
+    <p>Pas besoin d’être expert : notre système fonctionne grâce à la technologie blockchain et des smart contracts qui garantissent sécurité et automatisation.</p>
   </section>
 
-  <!-- TECHNOLOGY -->
-  <section class="section">
-    <h2>🛠️ Notre Technologie</h2>
-    <div class="cards">
-      <div class="card">
-        <i class="fas fa-shield-alt"></i>
-        <h3>Sécurité Blockchain</h3>
-        <p>Vos dépôts sont protégés et entièrement traçables grâce à la blockchain.</p>
-      </div>
-      <div class="card">
-        <i class="fas fa-cogs"></i>
-        <h3>Smart Contracts</h3>
-        <p>Les gains sont calculés et distribués automatiquement, sans erreur humaine.</p>
-      </div>
-      <div class="card">
-        <i class="fas fa-chart-line"></i>
-        <h3>Dashboard</h3>
-        <p>Suivez vos gains, retraits et bonus en temps réel, depuis n’importe quel appareil.</p>
-      </div>
-      <div class="card">
-        <i class="fas fa-dollar-sign"></i>
-        <h3>Paiements USDT</h3>
-        <p>Retirez vos gains en crypto stable, acceptée mondialement.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- INVESTMENT PLANS -->
+  <!-- PLANS D’INVESTISSEMENT -->
   <section class="section">
     <h2>📦 Nos Plans d’Investissement</h2>
-    <p>Choisissez une stratégie selon vos objectifs :</p>
-
+    <p>Choisissez selon vos objectifs financiers :</p>
     <div class="cards">
       <div class="card">
         <i class="fas fa-hotel"></i>
-        <h3>🏨 Chambres Quotidiennes (180 jours)</h3>
-        <p>Investissement : $10 → $800<br>Rendement quotidien : 1.5% → 5%<br>Gains payés quotidiennement, hebdomadairement et mensuellement.<br>Capital consommé, retraits possibles dès $3.</p>
+        <h3>🏨 Hôtels Quotidiens (180 jours)</h3>
+        <p>Investissement : dès $10<br>
+        Rendement : 1.5% → 5% par jour<br>
+        Paiements : quotidiens, hebdomadaires et mensuels<br>
+        Retraits possibles dès $3</p>
       </div>
       <div class="card">
         <i class="fas fa-building"></i>
-        <h3>🏢 Plan Résidence Fixe ($30)</h3>
-        <p>Choisissez la durée :<br>25 jours → +$6 → Total $36<br>45 jours → +$12 → Total $42<br>60 jours → +$24 → Total $54<br>Capital + bonus à la fin de la période.</p>
+        <h3>🏢 Résidence 1 – $30</h3>
+        <p>25 jours → +$6 (Total $36)<br>
+        45 jours → +$12 (Total $42)<br>
+        60 jours → +$24 (Total $54)<br>
+        Capital + bonus payés à la fin</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-building"></i>
+        <h3>🏢 Résidence 2 – $45</h3>
+        <p>25 jours → +$9 (Total $54)<br>
+        45 jours → +$15 (Total $60)<br>
+        60 jours → +$30 (Total $75)<br>
+        Retrait capital + bénéfices en fin de cycle</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-building"></i>
+        <h3>🏢 Résidence 3 – $80</h3>
+        <p>25 jours → +$16 (Total $96)<br>
+        45 jours → +$24 (Total $104)<br>
+        60 jours → +$40 (Total $120)<br>
+        Capital + gains à la clôture</p>
       </div>
     </div>
   </section>
 
-  <!-- REFERRAL PROGRAM -->
+  <!-- PROGRAMME DE PARRAINAGE -->
   <section class="section">
     <h2>🤝 Programme de Parrainage</h2>
-    <p>Gagnez aussi grâce à vos invités :</p>
+    <p>Invitez vos amis et gagnez automatiquement des commissions :</p>
     <ul>
-      <li>Niveau 1 : Invitations directes → commission maximale</li>
-      <li>Niveau 2 : Réseau de vos invités → revenu supplémentaire</li>
-      <li>Niveau 3 : Réseau étendu → gains passifs</li>
+      <li>🔹 Niveau 1 (directs) : <strong>15%</strong> par jour sur leurs revenus</li>
+      <li>🔹 Niveau 2 : <strong>10%</strong> par jour</li>
+      <li>🔹 Niveau 3 : <strong>5%</strong> par jour</li>
     </ul>
-    <p>🎁 Bonus supplémentaires débloqués lorsque vous atteignez certains jalons.</p>
+    <p>🎁 Plus votre réseau grandit, plus vos revenus passifs augmentent.</p>
   </section>
 
   <!-- FAQ -->
   <section class="section">
     <h2>❓ FAQ</h2>
-    <p><strong>💰 Comment commencer ?</strong> Créez un compte gratuit, choisissez votre plan et effectuez votre premier dépôt.</p>
-    <p><strong>🔒 Mon argent est-il sécurisé ?</strong> Oui, toutes les opérations sont sécurisées via blockchain et smart contracts.</p>
-    <p><strong>📈 Quand puis-je retirer mes gains ?</strong> À tout moment à partir de $3.</p>
-    <p><strong>🤝 Comment fonctionne le système de parrainage ?</strong> Vous gagnez des commissions sur 3 niveaux dès que des personnes s’inscrivent et investissent via votre lien.</p>
+    <p><strong>💰 Comment commencer ?</strong> Créez un compte, choisissez un plan et investissez le montant souhaité.</p>
+    <p><strong>🔒 Mon argent est-il sécurisé ?</strong> Oui, les dépôts sont protégés par la blockchain et des smart contracts.</p>
+    <p><strong>📈 Quand puis-je retirer mes gains ?</strong> Dès que vous avez atteint $3 minimum.</p>
+    <p><strong>🤝 Comment fonctionne le parrainage ?</strong> Vous recevez 15%, 10% et 5% par jour sur 3 niveaux de votre réseau.</p>
   </section>
 
   <!-- CTA -->
   <section class="cta">
-    <h2>📲 Commencez aujourd’hui !</h2>
-    <p>Inscrivez-vous gratuitement, choisissez votre plan et laissez la technologie travailler pour vous.</p>
-    <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i>Créer votre compte</a>
+    <h2>📲 Commencez dès aujourd’hui !</h2>
+    <p>Inscrivez-vous gratuitement, choisissez votre plan et laissez la technologie générer vos revenus.</p>
+    <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i>Créer un compte</a>
     <div style="margin-top:12px;">
-      <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i>Déjà membre ? Connexion</a>
+      <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i>Connexion</a>
     </div>
   </section>
 
   <footer style="text-align:center;margin-top:32px;color:#777;">
     © 2025 BRS Riche
   </footer>
-
 </div>
 
 <!-- GOOGLE TRANSLATE SCRIPT -->
 <script type="text/javascript">
-function googleTranslateElementInit() {
-  new google.translate.TranslateElement({pageLanguage: 'fr', includedLanguages: 'en,es,de,it,zh,ar'}, 'google_translate_element');
-}
+  function googleTranslateElementInit() {
+    new google.translate.TranslateElement({pageLanguage: 'fr', includedLanguages: 'en,es,de,it,zh,ar'}, 'google_translate_element');
+  }
 </script>
 <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
 <script>
-  // Bloquer raccourcis copie/impression/zoom
+  // Bloquer certains raccourcis
   document.addEventListener('keydown', function(e){
     if ((e.ctrlKey || e.metaKey) && ['c','s','u','p','+','-','0'].includes(e.key.toLowerCase())) e.preventDefault();
   });
   document.addEventListener('wheel', function(e){ if (e.ctrlKey) e.preventDefault(); }, {passive:false});
 </script>
-
 </body>
-</html>
-
-        
+  </html>
+      
