@@ -7,66 +7,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <style>
-body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  margin:0; padding:0;
-  background: linear-gradient(135deg,#0d47a1,#1976d2);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
-#login-container {
-  background: #fff;
-  padding: 40px 32px;
-  border-radius: 20px;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.25);
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-}
-h1 { color: #0d47a1; margin-bottom: 20px; font-size: 2em; }
-input[type="text"], input[type="password"] {
-  width: 100%;
-  padding: 12px 14px;
-  margin: 8px 0 4px 0;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  font-size: 1em;
-}
-input:focus { border-color: #1976d2; outline: none; }
-.password-container { position: relative; }
-.password-container i {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  cursor: pointer;
-  color: #555;
-}
-button {
-  background: #ffcc00;
-  color: #0d47a1;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-weight: bold;
-  cursor: pointer;
-  width: 100%;
-  margin-top: 16px;
-}
-button:hover { background: #ffd633; }
-#message { margin-top: 12px; font-weight: bold; }
-.success { color: green; }
-.error { color: red; }
+body { font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0; background: linear-gradient(135deg,#0d47a1,#1976d2); display:flex; justify-content:center; align-items:center; min-height:100vh; }
+#login-container { background:#fff; padding:40px 32px; border-radius:20px; box-shadow:0 8px 28px rgba(0,0,0,0.25); width:100%; max-width:400px; text-align:center; }
+h1 { color:#0d47a1; margin-bottom:20px; font-size:2em; }
+input[type="text"], input[type="password"] { width:100%; padding:12px 14px; margin:8px 0 4px 0; border:1px solid #ccc; border-radius:10px; font-size:1em; }
+input:focus { border-color:#1976d2; outline:none; }
+.password-container { position:relative; }
+.password-container i { position:absolute; top:12px; right:12px; cursor:pointer; color:#555; }
+button { background:#ffcc00; color:#0d47a1; border:none; padding:12px 24px; border-radius:12px; font-weight:bold; cursor:pointer; width:100%; margin-top:16px; }
+button:hover { background:#ffd633; }
+#message { margin-top:12px; font-weight:bold; }
+.success { color:green; }
+.error { color:red; }
 a { display:block; margin-top:12px; color:#1976d2; text-decoration:none; }
 a:hover { text-decoration: underline; }
 </style>
-
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
@@ -78,10 +36,9 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 </script>
 </head>
-
 <body>
 <div id="login-container">
-  <h1>🔑 Connexion</h1>
+  <h2>🔑 Connexion</h2>
   <form id="login-form">
     <input type="text" id="userOrEmail" placeholder="Nom d’utilisateur ou Email" required/>
     <div class="password-container">
@@ -101,60 +58,53 @@ const message = document.getElementById('message');
 const togglePassword = document.getElementById('togglePassword');
 const passwordInput = document.getElementById('password');
 
-// Afficher / Masquer mot de passe
+// Masquer / afficher mot de passe
 togglePassword.addEventListener('click', () => {
   const type = passwordInput.type === 'password' ? 'text' : 'password';
   passwordInput.type = type;
   togglePassword.classList.toggle('fa-eye-slash');
 });
 
-// Fonction de connexion
-form.addEventListener('submit', async (e) => {
+// Connexion via pseudo ou email
+form.addEventListener('submit', async (e)=>{
   e.preventDefault();
   message.textContent = '';
-  
   const userOrEmail = document.getElementById('userOrEmail').value.trim();
   const password = passwordInput.value;
 
   try {
     let email = userOrEmail;
 
-    // Si l'utilisateur a saisi un pseudo
-    if (!userOrEmail.includes('@')) {
-      // On lit depuis /usernames qui est public
-      const snapshot = await db.collection('usernames').doc(userOrEmail).get();
-      if (!snapshot.exists) throw new Error("Pseudo non trouvé !");
-      email = snapshot.data().email;
+    // Si ce n'est pas un email, chercher le pseudo
+    if(!userOrEmail.includes('@')){
+      const query = await db.collection('users').where('username', '==', userOrEmail).get();
+      if(!query.empty){
+        email = query.docs[0].data().email;
+      } else {
+        throw new Error("❌ Pseudo non trouvé !");
+      }
     }
 
-    // Connexion Firebase Auth
-    const userCredential = await auth.signInWithEmailAndPassword(email, password);
-    const uid = userCredential.user.uid;
-
-    // Récupérer les infos Firestore
-    const userDoc = await db.collection('users').doc(uid).get();
-    if (!userDoc.exists) throw new Error("Impossible de récupérer les données utilisateur !");
-
-    const role = userDoc.data().role || 'user';
-
-    message.textContent = `✅ Connexion réussie ! Rôle : ${role}`;
+    // Connexion Firebase
+    await auth.signInWithEmailAndPassword(email, password);
+    message.textContent = "✅ Connexion réussie ! Redirection...";
     message.className = 'success';
 
-    // Redirection selon rôle (exemple)
-    setTimeout(() => {
-      if (role === 'admin') {
-        window.location.href = "admin-dashboard.html";
-      } else {
-        window.location.href = "dashboard.html";
-      }
-    }, 1500);
+    // Redirection selon rôle
+    const userDoc = await db.collection('users').doc(auth.currentUser.uid).get();
+    const role = userDoc.data().role;
+    if(role === 'admin'){
+      setTimeout(()=>{ window.location.href='admin-dashboard.html'; }, 1500);
+    } else {
+      setTimeout(()=>{ window.location.href='dashboard.html'; }, 1500);
+    }
 
-  } catch (err) {
-    console.error(err);
-    message.textContent = "❌ " + err.message;
+  } catch(err){
+    message.textContent = err.message.includes('auth') ? "❌ Email ou mot de passe incorrect" : err.message;
     message.className = 'error';
   }
 });
 </script>
 </body>
 </html>
+
