@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -25,7 +26,7 @@ body {
   text-align: center;
 }
 h1 { color: #0d47a1; margin-bottom: 20px; font-size: 2em; }
-input[type="text"], input[type="password"] {
+input[type="email"], input[type="password"] {
   width: 100%;
   padding: 12px 14px;
   margin: 8px 0 4px 0;
@@ -82,7 +83,7 @@ const db = firebase.firestore();
 <div id="login-container">
   <h1>🔑 Connexion</h1>
   <form id="login-form">
-    <input type="text" id="userOrEmail" placeholder="Nom d’utilisateur ou Email" required/>
+    <input type="email" id="email" placeholder="Adresse Email" required/>
     <div class="password-container">
       <input type="password" id="password" placeholder="Mot de passe" required/>
       <i id="togglePassword" class="fas fa-eye"></i>
@@ -112,20 +113,10 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault();
   message.textContent = '';
   
-  const userOrEmail = document.getElementById('userOrEmail').value.trim();
+  const email = document.getElementById('email').value.trim();
   const password = passwordInput.value;
 
   try {
-    let email = userOrEmail;
-
-    // Si l'utilisateur a saisi un pseudo
-    if (!userOrEmail.includes('@')) {
-      // On lit depuis /usernames qui est public
-      const snapshot = await db.collection('usernames').doc(userOrEmail).get();
-      if (!snapshot.exists) throw new Error("Pseudo non trouvé !");
-      email = snapshot.data().email;
-    }
-
     // Connexion Firebase Auth
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const uid = userCredential.user.uid;
@@ -139,7 +130,7 @@ form.addEventListener('submit', async (e) => {
     message.textContent = `✅ Connexion réussie ! Rôle : ${role}`;
     message.className = 'success';
 
-    // Redirection selon rôle (exemple)
+    // Redirection selon rôle
     setTimeout(() => {
       if (role === 'admin') {
         window.location.href = "admin-dashboard.html";
@@ -156,5 +147,5 @@ form.addEventListener('submit', async (e) => {
 });
 </script>
 </body>
-  </html>
-  
+        </html>
+      
