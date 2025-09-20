@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -7,64 +6,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <style>
-body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  margin:0; padding:0;
-  background: linear-gradient(135deg,#0d47a1,#1976d2);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
-#login-container {
-  background: #fff;
-  padding: 40px 32px;
-  border-radius: 20px;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.25);
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-}
-h1 {
-  color: #0d47a1;
-  margin-bottom: 20px;
-  font-size: 2em;
-}
-input[type="text"], input[type="password"] {
-  width: 100%;
-  padding: 12px 14px;
-  margin: 8px 0 4px 0;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  font-size: 1em;
-}
-input:focus {
-  border-color: #1976d2;
-  outline: none;
-}
-.password-container {
-  position: relative;
-}
-.password-container i {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  cursor: pointer;
-  color: #555;
-}
-button {
-  background: #ffcc00;
-  color: #0d47a1;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-weight: bold;
-  cursor: pointer;
-  width: 100%;
-  margin-top: 16px;
-}
-button:hover { background: #ffd633; }
-#message { margin-top: 12px; font-weight: bold; }
+body { font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0; background: linear-gradient(135deg,#0d47a1,#1976d2); display: flex; justify-content: center; align-items: center; min-height: 100vh;}
+#login-container { background: #fff; padding: 40px 32px; border-radius: 20px; box-shadow: 0 8px 28px rgba(0,0,0,0.25); width: 100%; max-width: 400px; text-align: center;}
+h1 { color: #0d47a1; margin-bottom: 20px; font-size: 2em; font-weight: bold;}
+input[type="text"], input[type="password"] { width: 100%; padding: 12px 14px; margin: 8px 0 4px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 1em;}
+input:focus { border-color: #1976d2; outline: none;}
+.password-container { position: relative;}
+.password-container i { position: absolute; top: 12px; right: 12px; cursor: pointer; color: #555;}
+button { background: #ffcc00; color: #0d47a1; border: none; padding: 12px 24px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 16px;}
+button:hover { background: #ffd633;}
+#message { margin-top: 12px; font-weight: bold;}
 .success { color: green; }
 .error { color: red; }
 a { display:block; margin-top:12px; color:#1976d2; text-decoration:none; }
@@ -110,23 +61,25 @@ const message = document.getElementById('message');
 const togglePassword = document.getElementById('togglePassword');
 const passwordInput = document.getElementById('password');
 
+// Afficher / Masquer mot de passe
 togglePassword.addEventListener('click', () => {
   const type = passwordInput.type === 'password' ? 'text' : 'password';
   passwordInput.type = type;
   togglePassword.classList.toggle('fa-eye-slash');
 });
 
+// Connexion
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   message.textContent = '';
-  
+
   const userOrEmail = document.getElementById('userOrEmail').value.trim();
   const password = passwordInput.value;
 
   try {
     let email = userOrEmail;
 
-    // Si c'est un username, on récupère l'email correspondant
+    // Vérifier si c'est un username
     if (!userOrEmail.includes('@')) {
       const query = await db.collection('users').where('username','==',userOrEmail).get();
       if (!query.empty) {
@@ -136,26 +89,23 @@ form.addEventListener('submit', async (e) => {
       }
     }
 
-    // Connexion Firebase Auth
+    // Sign in
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
-    // Récupérer rôle et wallet
+    // Vérifier permissions / role
     const userDoc = await db.collection('users').doc(user.uid).get();
-    if (!userDoc.exists) throw new Error("Impossible de récupérer les données utilisateur !");
-    const userData = userDoc.data();
+    if(!userDoc.exists){
+      throw new Error("❌ Permission insuffisante pour accéder au dashboard !");
+    }
 
-    // Stocker role et wallet dans sessionStorage (ou localStorage si tu veux)
-    sessionStorage.setItem('uid', user.uid);
-    sessionStorage.setItem('username', userData.username);
-    sessionStorage.setItem('role', userData.role);
-    sessionStorage.setItem('wallet', JSON.stringify(userData.wallet));
+    const userData = userDoc.data();
+    // Stocker nom d'utilisateur pour dashboard
+    localStorage.setItem('currentUser', JSON.stringify({ uid: user.uid, username: userData.username, role: userData.role }));
 
     message.textContent = "✅ Connexion réussie ! Redirection...";
     message.className = 'success';
-
-    // Redirection vers dashboard
-    setTimeout(() => { window.location.href = "dashboard.html"; }, 2000);
+    setTimeout(() => { window.location.href = "dashboard.html"; }, 1500);
 
   } catch(err) {
     message.textContent = "❌ " + err.message;
@@ -165,5 +115,3 @@ form.addEventListener('submit', async (e) => {
 </script>
 </body>
 </html>
-
-  
