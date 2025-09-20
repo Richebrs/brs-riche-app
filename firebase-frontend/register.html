@@ -10,6 +10,7 @@ body {
   font-family: 'Segoe UI', Arial, sans-serif;
   margin:0; padding:0;
   background: linear-gradient(135deg,#0d47a1,#1976d2);
+  color: #333;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -131,14 +132,12 @@ const message = document.getElementById('message');
 form.addEventListener('submit', async (e)=>{
   e.preventDefault();
   message.textContent = '';
-
   const username = document.getElementById('username').value.trim();
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const confirmPassword = document.getElementById('confirmPassword').value;
   const referralCode = document.getElementById('referralCode').value.trim();
 
-  // Vérif mot de passe
   if(password !== confirmPassword){
     message.textContent = "❌ Les mots de passe ne correspondent pas.";
     message.className = 'error';
@@ -146,34 +145,36 @@ form.addEventListener('submit', async (e)=>{
   }
 
   try {
+    // Vérifier si le username existe déjà
+    const usernameQuery = await db.collection('users').where('username','==',username).get();
+    if(!usernameQuery.empty){
+      throw new Error("❌ Ce pseudo est déjà utilisé.");
+    }
+
     // Créer utilisateur Firebase Auth
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
-    // Ajouter infos Firestore
+    // Créer wallet initial
+    const wallet = { balance:0, totalGains:0, totalWithdrawn:0 };
+
+    // Ajouter utilisateur à Firestore
     await db.collection("users").doc(user.uid).set({
       username,
       email,
-      referralCode: referralCode || null,
       role: "user",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      wallet: { balance: 0, totalGains: 0, totalWithdrawn: 0 }
-    });
-
-    // Ajouter document referrals
-    await db.collection("referrals").doc(user.uid).set({
-      level1: [],
-      level2: [],
-      level3: [],
-      totalBonus: 0
+      referralCode: referralCode || null,
+      wallet,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
     message.textContent = "✅ Inscription réussie ! Redirection vers connexion...";
     message.className = 'success';
+
     setTimeout(()=>{ window.location.href = "login.html"; }, 3000);
 
-  } catch(error){
-    message.textContent = "❌ " + error.message;
+  } catch(err){
+    message.textContent = err.message;
     message.className = 'error';
   }
 });
