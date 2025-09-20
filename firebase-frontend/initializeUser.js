@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -41,26 +41,27 @@ async function initializeUser({username, email, password, role = 'user', referra
       }
     });
 
-    // 3️⃣ Créer document vide pour parrainage
-    await db.collection('referrals').doc(user.uid).set({
-      level1: [],
-      level2: [],
-      level3: [],
-      totalBonus: 0
-    });
+    // 3️⃣ Créer sous-collections accessibles par l'utilisateur
+    const batch = db.batch();
 
-    // 4️⃣ Créer documents vides pour hôtels et résidences
-    await db.collection('hotels').doc(user.uid).set({
-      hotelsList: []
-    });
-    await db.collection('residences').doc(user.uid).set({
-      residencesList: []
-    });
+    // Parrainages
+    const refDoc = db.collection('users').doc(user.uid).collection('referrals').doc('levels');
+    batch.set(refDoc, {level1: [], level2: [], level3: [], totalBonus: 0});
 
-    // 5️⃣ Créer document vide transactions
-    await db.collection('transactions').doc(user.uid).set({
-      transactions: []
-    });
+    // Hôtels
+    const hotelsDoc = db.collection('users').doc(user.uid).collection('hotels').doc('list');
+    batch.set(hotelsDoc, {hotelsList: []});
+
+    // Résidences
+    const resDoc = db.collection('users').doc(user.uid).collection('residences').doc('list');
+    batch.set(resDoc, {residencesList: []});
+
+    // Transactions
+    const txDoc = db.collection('users').doc(user.uid).collection('transactions').doc('list');
+    batch.set(txDoc, {transactions: []});
+
+    // Commit batch
+    await batch.commit();
 
     console.log(`✅ Utilisateur ${username} créé avec succès !`);
     alert(`Utilisateur ${username} créé avec succès !`);
