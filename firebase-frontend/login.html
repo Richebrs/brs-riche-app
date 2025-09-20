@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -109,14 +110,12 @@ const message = document.getElementById('message');
 const togglePassword = document.getElementById('togglePassword');
 const passwordInput = document.getElementById('password');
 
-// Afficher / Masquer mot de passe
 togglePassword.addEventListener('click', () => {
   const type = passwordInput.type === 'password' ? 'text' : 'password';
   passwordInput.type = type;
   togglePassword.classList.toggle('fa-eye-slash');
 });
 
-// Connexion
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   message.textContent = '';
@@ -127,7 +126,7 @@ form.addEventListener('submit', async (e) => {
   try {
     let email = userOrEmail;
 
-    // Si ce n'est pas un email, chercher l'email correspondant au pseudo
+    // Si c'est un username, on récupère l'email correspondant
     if (!userOrEmail.includes('@')) {
       const query = await db.collection('users').where('username','==',userOrEmail).get();
       if (!query.empty) {
@@ -141,23 +140,22 @@ form.addEventListener('submit', async (e) => {
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
-    // Récupérer rôle et pseudo
-    const doc = await db.collection('users').doc(user.uid).get();
-    const data = doc.data();
-    const role = data.role || 'user';
-    const username = data.username || '';
+    // Récupérer rôle et wallet
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) throw new Error("Impossible de récupérer les données utilisateur !");
+    const userData = userDoc.data();
 
-    message.textContent = `✅ Bienvenue ${username} ! Redirection...`;
+    // Stocker role et wallet dans sessionStorage (ou localStorage si tu veux)
+    sessionStorage.setItem('uid', user.uid);
+    sessionStorage.setItem('username', userData.username);
+    sessionStorage.setItem('role', userData.role);
+    sessionStorage.setItem('wallet', JSON.stringify(userData.wallet));
+
+    message.textContent = "✅ Connexion réussie ! Redirection...";
     message.className = 'success';
 
-    // Redirection vers dashboard selon rôle
-    setTimeout(() => {
-      if(role === 'admin'){
-        window.location.href = "admin-dashboard.html";
-      } else {
-        window.location.href = "dashboard.html";
-      }
-    }, 2000);
+    // Redirection vers dashboard
+    setTimeout(() => { window.location.href = "dashboard.html"; }, 2000);
 
   } catch(err) {
     message.textContent = "❌ " + err.message;
@@ -167,3 +165,5 @@ form.addEventListener('submit', async (e) => {
 </script>
 </body>
 </html>
+
+  
