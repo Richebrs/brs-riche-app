@@ -27,6 +27,8 @@ body {
 h1 {
   color: #0d47a1;
   margin-bottom: 20px;
+  font-size: 2em;
+  font-weight: bold;
 }
 input[type="text"], input[type="email"], input[type="password"] {
   width: 100%;
@@ -34,20 +36,11 @@ input[type="text"], input[type="email"], input[type="password"] {
   margin: 8px 0 4px 0;
   border: 1px solid #ccc;
   border-radius: 10px;
+  font-size: 1em;
 }
 input:focus {
   border-color: #1976d2;
   outline: none;
-}
-.password-wrapper {
-  position: relative;
-}
-.password-wrapper i {
-  position: absolute;
-  top: 35%;
-  right: 12px;
-  cursor: pointer;
-  color: #555;
 }
 small {
   display:block;
@@ -66,12 +59,24 @@ button {
   cursor: pointer;
   width: 100%;
   margin-top: 16px;
+  transition: transform .2s, background .2s;
 }
-button:hover { background: #ffd633; }
-#message { margin-top: 12px; font-weight: bold; }
+button:hover {
+  transform: translateY(-2px);
+  background: #ffd633;
+}
+#message {
+  margin-top: 12px;
+  font-weight: bold;
+}
 .success { color: green; }
 .error { color: red; }
-a { color:#1976d2; display:block; margin-top:12px; }
+a {
+  color: #1976d2;
+  text-decoration: none;
+  margin-top: 12px;
+  display: inline-block;
+}
 a:hover { text-decoration: underline; }
 </style>
 
@@ -80,14 +85,17 @@ a:hover { text-decoration: underline; }
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
-  authDomain: "brs-riche-2.firebaseapp.com",
-  projectId: "brs-riche-2"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+  const firebaseConfig = {
+    apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+    authDomain: "brs-riche-2.firebaseapp.com",
+    projectId: "brs-riche-2",
+    storageBucket: "brs-riche-2.appspot.com",
+    messagingSenderId: "313874599780",
+    appId: "1:313874599780:web:EXEMPLE"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 </script>
 </head>
 <body>
@@ -100,10 +108,7 @@ const db = firebase.firestore();
     <input type="email" id="email" placeholder="Email" required/>
     <small>Votre email sera utilisé pour la connexion.</small>
 
-    <div class="password-wrapper">
-      <input type="password" id="password" placeholder="Mot de passe" required/>
-      <i class="fa fa-eye" id="togglePassword"></i>
-    </div>
+    <input type="password" id="password" placeholder="Mot de passe" required/>
     <small>Minimum 6 caractères.</small>
 
     <input type="password" id="confirmPassword" placeholder="Confirmer mot de passe" required/>
@@ -119,17 +124,13 @@ const db = firebase.firestore();
 </div>
 
 <script>
-document.getElementById("togglePassword").addEventListener("click", ()=>{
-  const pwd = document.getElementById("password");
-  pwd.type = pwd.type === "password" ? "text" : "password";
-});
-
 const form = document.getElementById('register-form');
 const message = document.getElementById('message');
 
-form.addEventListener('submit',(e)=>{
+form.addEventListener('submit', async (e)=>{
   e.preventDefault();
-  message.textContent = "";
+  message.textContent = '';
+
   const username = document.getElementById('username').value.trim();
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
@@ -138,28 +139,38 @@ form.addEventListener('submit',(e)=>{
 
   if(password !== confirmPassword){
     message.textContent = "❌ Les mots de passe ne correspondent pas.";
-    message.className = "error";
+    message.className = 'error';
     return;
   }
 
-  auth.createUserWithEmailAndPassword(email, password)
-  .then((userCredential)=>{
-    const user = userCredential.user;
-    return db.collection("users").doc(user.uid).set({
-      username, email, referralCode: referralCode || null,
+  try {
+    // Créer utilisateur
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const uid = userCredential.user.uid;
+
+    // Ajouter dans Firestore
+    await db.collection("users").doc(uid).set({
+      username,
+      email,
+      referralCode: referralCode || null,
+      role: "user",
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(()=>{
-      message.textContent = "✅ Inscription réussie ! Redirection...";
-      message.className = "success";
-      setTimeout(()=>{ window.location.href="login.html"; },2000);
     });
-  })
-  .catch(err=>{
+
+    // Wallet initial
+    await db.collection("wallets").doc(uid).set({ balance: 0, withdrawn: 0 });
+
+    message.textContent = "✅ Inscription réussie ! Redirection...";
+    message.className = 'success';
+
+    setTimeout(()=>{ window.location.href = "login.html"; }, 3000);
+
+  } catch (err) {
     message.textContent = "❌ " + err.message;
-    message.className = "error";
-  });
+    message.className = 'error';
+  }
 });
 </script>
 </body>
-  </html>
-  
+      </html>
+    
