@@ -85,6 +85,7 @@ a:hover { text-decoration: underline; }
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
+  // Configuration Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
     authDomain: "brs-riche-2.firebaseapp.com",
@@ -137,6 +138,7 @@ form.addEventListener('submit', async (e)=>{
   const confirmPassword = document.getElementById('confirmPassword').value;
   const referralCode = document.getElementById('referralCode').value.trim();
 
+  // Vérif mot de passe
   if(password !== confirmPassword){
     message.textContent = "❌ Les mots de passe ne correspondent pas.";
     message.className = 'error';
@@ -144,33 +146,38 @@ form.addEventListener('submit', async (e)=>{
   }
 
   try {
-    // Créer utilisateur
+    // Créer utilisateur Firebase Auth
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-    const uid = userCredential.user.uid;
+    const user = userCredential.user;
 
-    // Ajouter dans Firestore
-    await db.collection("users").doc(uid).set({
+    // Ajouter infos Firestore
+    await db.collection("users").doc(user.uid).set({
       username,
       email,
       referralCode: referralCode || null,
       role: "user",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      wallet: { balance: 0, totalGains: 0, totalWithdrawn: 0 }
     });
 
-    // Wallet initial
-    await db.collection("wallets").doc(uid).set({ balance: 0, withdrawn: 0 });
+    // Ajouter document referrals
+    await db.collection("referrals").doc(user.uid).set({
+      level1: [],
+      level2: [],
+      level3: [],
+      totalBonus: 0
+    });
 
-    message.textContent = "✅ Inscription réussie ! Redirection...";
+    message.textContent = "✅ Inscription réussie ! Redirection vers connexion...";
     message.className = 'success';
-
     setTimeout(()=>{ window.location.href = "login.html"; }, 3000);
 
-  } catch (err) {
-    message.textContent = "❌ " + err.message;
+  } catch(error){
+    message.textContent = "❌ " + error.message;
     message.className = 'error';
   }
 });
 </script>
 </body>
-      </html>
-    
+  </html>
+  
