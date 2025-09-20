@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -8,20 +7,26 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <style>
 body { font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0;
-  background: linear-gradient(135deg,#0d47a1,#1976d2);
-  display:flex; justify-content:center; align-items:center; min-height:100vh; }
-#register-container { background:#fff; padding:40px 32px; border-radius:20px; box-shadow:0 8px 28px rgba(0,0,0,0.25); width:100%; max-width:400px; text-align:center; }
-h1 { color:#0d47a1; margin-bottom:20px; font-size:2em; }
-input[type="text"], input[type="email"], input[type="password"] { width:100%; padding:12px 14px; margin:8px 0 4px 0; border:1px solid #ccc; border-radius:10px; font-size:1em; }
-input:focus { border-color:#1976d2; outline:none; }
-.password-container { position:relative; }
-.password-container i { position:absolute; top:12px; right:12px; cursor:pointer; color:#555; }
-button { background:#ffcc00; color:#0d47a1; border:none; padding:12px 24px; border-radius:12px; font-weight:bold; cursor:pointer; width:100%; margin-top:16px; }
-button:hover { background:#ffd633; }
-#message { margin-top:12px; font-weight:bold; }
-.success { color:green; }
-.error { color:red; }
-a { display:block; margin-top:12px; color:#1976d2; text-decoration:none; }
+       background: linear-gradient(135deg,#0d47a1,#1976d2);
+       display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+#register-container { background: #fff; padding: 40px 32px; border-radius: 20px;
+                     box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+                     width: 100%; max-width: 420px; text-align: center; }
+h1 { color: #0d47a1; margin-bottom: 20px; font-size: 2em; font-weight: bold; }
+input[type="text"], input[type="email"], input[type="password"] {
+  width: 100%; padding: 12px 14px; margin: 8px 0 4px 0; border: 1px solid #ccc;
+  border-radius: 10px; font-size: 1em; }
+input:focus { border-color: #1976d2; outline: none; }
+.password-container { position: relative; }
+.password-container i { position: absolute; top:12px; right:12px; cursor:pointer; color:#555; }
+small { display:block; margin-bottom:10px; color:#555; text-align:left; font-size:0.85em; }
+button { background: #ffcc00; color: #0d47a1; border: none; padding: 12px 24px;
+         border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%;
+         margin-top: 16px; transition: transform .2s, background .2s; }
+button:hover { transform: translateY(-2px); background: #ffd633; }
+#message { margin-top: 12px; font-weight: bold; }
+.success { color: green; } .error { color: red; }
+a { color: #1976d2; text-decoration: none; margin-top: 12px; display: inline-block; }
 a:hover { text-decoration: underline; }
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -40,21 +45,26 @@ const db = firebase.firestore();
 </head>
 <body>
 <div id="register-container">
-  <h2>🌍 BRS RICHE</h2>
+  <h1>🌍 BRS RICHE</h1>
   <form id="register-form">
-    <input type="text" id="username" placeholder="Choisissez un pseudo unique" required/>
-    <input type="email" id="email" placeholder="Votre email sera utilisé pour la connexion" required/>
+    <input type="text" id="username" placeholder="Nom d'utilisateur" required/>
+    <small>Choisissez un pseudo unique.</small>
+
+    <input type="email" id="email" placeholder="Email" required/>
+    <small>Votre email sera utilisé pour la connexion.</small>
 
     <div class="password-container">
-      <input type="password" id="password" placeholder="Mot de passe (min 6 caractères)" required/>
+      <input type="password" id="password" placeholder="Mot de passe" required/>
       <i id="togglePassword" class="fas fa-eye"></i>
     </div>
-    <div class="password-container">
-      <input type="password" id="confirmPassword" placeholder="Retapez le mot de passe" required/>
-      <i id="toggleConfirm" class="fas fa-eye"></i>
-    </div>
+    <small>Minimum 6 caractères.</small>
 
-    <input type="text" id="referral" placeholder="Code de parrainage (optionnel)"/>
+    <input type="password" id="confirmPassword" placeholder="Confirmer mot de passe" required/>
+    <small>Retapez le mot de passe.</small>
+
+    <input type="text" id="referralCode" placeholder="Code de parrainage (optionnel)"/>
+    <small>Entrez le code de votre parrain si vous en avez un.</small>
+
     <button type="submit">S’inscrire</button>
   </form>
   <div id="message"></div>
@@ -62,70 +72,58 @@ const db = firebase.firestore();
 </div>
 
 <script>
-// --- Masquer / afficher mots de passe ---
+const form = document.getElementById('register-form');
+const message = document.getElementById('message');
 const togglePassword = document.getElementById('togglePassword');
-const toggleConfirm = document.getElementById('toggleConfirm');
+const passwordInput = document.getElementById('password');
+
 togglePassword.addEventListener('click', () => {
-  const pass = document.getElementById('password');
-  pass.type = pass.type === 'password' ? 'text' : 'password';
+  const type = passwordInput.type === 'password' ? 'text' : 'password';
+  passwordInput.type = type;
   togglePassword.classList.toggle('fa-eye-slash');
 });
-toggleConfirm.addEventListener('click', () => {
-  const pass = document.getElementById('confirmPassword');
-  pass.type = pass.type === 'password' ? 'text' : 'password';
-  toggleConfirm.classList.toggle('fa-eye-slash');
-});
 
-// --- Inscription ---
-document.getElementById('register-form').addEventListener('submit', async (e)=>{
+form.addEventListener('submit', async (e)=>{
   e.preventDefault();
+  message.textContent = '';
   const username = document.getElementById('username').value.trim();
   const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
+  const password = passwordInput.value;
   const confirmPassword = document.getElementById('confirmPassword').value;
-  const referralCode = document.getElementById('referral').value || null;
-  const message = document.getElementById('message');
+  const referralCode = document.getElementById('referralCode').value.trim();
 
-  message.textContent = '';
-  message.className = '';
-
-  if(password.length < 6){ message.textContent="❌ Mot de passe trop court"; message.className='error'; return; }
-  if(password !== confirmPassword){ message.textContent="❌ Les mots de passe ne correspondent pas"; message.className='error'; return; }
+  if(password !== confirmPassword){
+    message.textContent = "❌ Les mots de passe ne correspondent pas.";
+    message.className = 'error';
+    return;
+  }
 
   try {
-    // Vérifier si pseudo déjà utilisé
-    const usernameDoc = await db.collection('usernames').doc(username).get();
-    if(usernameDoc.exists){ throw new Error("Pseudo déjà utilisé !"); }
-
-    // Créer compte Firebase Auth
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
-    // Ajouter dans /users
     await db.collection('users').doc(user.uid).set({
-      username, email, role:"user", referralCode, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      username,
+      email,
+      role: "user",        // rôle fixe
+      referralCode: referralCode || null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       wallet: { balance:0, totalGains:0, totalWithdrawn:0 }
     });
 
-    // Créer mapping username → email
-    await db.collection('usernames').doc(username).set({ email });
-
-    // Créer documents vides
-    await db.collection('referrals').doc(user.uid).set({ level1:[], level2:[], level3:[], totalBonus:0 });
-    await db.collection('hotels').doc(user.uid).set({ hotelsList:[] });
-    await db.collection('residences').doc(user.uid).set({ residencesList:[] });
-    await db.collection('transactions').doc(user.uid).set({ transactions:[] });
-
     message.textContent = "✅ Inscription réussie ! Redirection...";
     message.className = 'success';
-    setTimeout(()=>{ window.location.href="login.html"; }, 2000);
+    setTimeout(()=> window.location.href = "login.html", 2000);
 
-  } catch(err){
-    message.textContent = "❌ " + err.message;
+  } catch(error){
+    if(error.code === "auth/email-already-in-use"){
+      message.textContent = "❌ Cet email est déjà utilisé.";
+    } else {
+      message.textContent = "❌ " + error.message;
+    }
     message.className = 'error';
   }
 });
 </script>
 </body>
-       </html>
-       
+</html>
