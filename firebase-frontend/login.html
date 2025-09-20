@@ -28,7 +28,6 @@ h1 {
   color: #0d47a1;
   margin-bottom: 20px;
   font-size: 2em;
-  font-weight: bold;
 }
 input[type="text"], input[type="password"] {
   width: 100%;
@@ -91,7 +90,7 @@ const db = firebase.firestore();
   <h1>🔑 Connexion</h1>
   <form id="login-form">
     <input type="text" id="userOrEmail" placeholder="Nom d’utilisateur ou Email" required/>
-
+    
     <div class="password-container">
       <input type="password" id="password" placeholder="Mot de passe" required/>
       <i id="togglePassword" class="fas fa-eye"></i>
@@ -121,16 +120,16 @@ togglePassword.addEventListener('click', () => {
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   message.textContent = '';
-
+  
   const userOrEmail = document.getElementById('userOrEmail').value.trim();
   const password = passwordInput.value;
 
   try {
     let email = userOrEmail;
 
-    // Si ce n'est pas un email, vérifier username dans Firestore
+    // Si ce n'est pas un email, chercher l'email correspondant au pseudo
     if (!userOrEmail.includes('@')) {
-      const query = await db.collection('users').where('username', '==', userOrEmail).get();
+      const query = await db.collection('users').where('username','==',userOrEmail).get();
       if (!query.empty) {
         email = query.docs[0].data().email;
       } else {
@@ -142,19 +141,23 @@ form.addEventListener('submit', async (e) => {
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
-    // Récupérer rôle
+    // Récupérer rôle et pseudo
     const doc = await db.collection('users').doc(user.uid).get();
-    const role = doc.data().role || "user";
+    const data = doc.data();
+    const role = data.role || 'user';
+    const username = data.username || '';
 
-    message.textContent = "✅ Connexion réussie ! Redirection...";
+    message.textContent = `✅ Bienvenue ${username} ! Redirection...`;
     message.className = 'success';
 
-    // Redirection selon rôle
-    if(role === "admin") {
-      setTimeout(()=>{ window.location.href = "admin-dashboard.html"; }, 1500);
-    } else {
-      setTimeout(()=>{ window.location.href = "dashboard.html"; }, 1500);
-    }
+    // Redirection vers dashboard selon rôle
+    setTimeout(() => {
+      if(role === 'admin'){
+        window.location.href = "admin-dashboard.html";
+      } else {
+        window.location.href = "dashboard.html";
+      }
+    }, 2000);
 
   } catch(err) {
     message.textContent = "❌ " + err.message;
@@ -163,5 +166,4 @@ form.addEventListener('submit', async (e) => {
 });
 </script>
 </body>
-  </html>
-  
+</html>
