@@ -37,13 +37,8 @@ input[type="text"], input[type="password"] {
   border-radius: 10px;
   font-size: 1em;
 }
-input:focus {
-  border-color: #1976d2;
-  outline: none;
-}
-.password-container {
-  position: relative;
-}
+input:focus { border-color: #1976d2; outline: none; }
+.password-container { position: relative; }
 .password-container i {
   position: absolute;
   top: 12px;
@@ -137,12 +132,23 @@ form.addEventListener('submit', async (e) => {
       }
     }
 
-    // Sign in
-    await auth.signInWithEmailAndPassword(email, password);
+    // Connexion Firebase Auth
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+
+    // Vérifier rôle
+    const doc = await db.collection('users').doc(user.uid).get();
+    const role = doc.exists ? doc.data().role || 'user' : 'user';
+
     message.textContent = "✅ Connexion réussie ! Redirection...";
     message.className = 'success';
 
-    setTimeout(() => { window.location.href = "dashboard.html"; }, 2000);
+    // Redirection selon rôle
+    setTimeout(() => {
+      if(role === 'admin') window.location.href = "admin-dashboard.html";
+      else window.location.href = "dashboard.html";
+    }, 2000);
+
   } catch(err) {
     message.textContent = "❌ " + err.message;
     message.className = 'error';
@@ -150,4 +156,5 @@ form.addEventListener('submit', async (e) => {
 });
 </script>
 </body>
-</html>
+        </html>
+  
