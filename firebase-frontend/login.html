@@ -25,11 +25,7 @@ body {
   max-width: 400px;
   text-align: center;
 }
-h1 {
-  color: #0d47a1;
-  margin-bottom: 20px;
-  font-size: 2em;
-}
+h1 { color: #0d47a1; margin-bottom: 20px; font-size: 2em; }
 input[type="text"], input[type="password"] {
   width: 100%;
   padding: 12px 14px;
@@ -38,13 +34,8 @@ input[type="text"], input[type="password"] {
   border-radius: 10px;
   font-size: 1em;
 }
-input:focus {
-  border-color: #1976d2;
-  outline: none;
-}
-.password-container {
-  position: relative;
-}
+input:focus { border-color: #1976d2; outline: none; }
+.password-container { position: relative; }
 .password-container i {
   position: absolute;
   top: 12px;
@@ -75,6 +66,7 @@ a:hover { text-decoration: underline; }
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
@@ -86,17 +78,16 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 </script>
 </head>
+
 <body>
 <div id="login-container">
   <h1>🔑 Connexion</h1>
   <form id="login-form">
     <input type="text" id="userOrEmail" placeholder="Nom d’utilisateur ou Email" required/>
-    
     <div class="password-container">
       <input type="password" id="password" placeholder="Mot de passe" required/>
       <i id="togglePassword" class="fas fa-eye"></i>
     </div>
-
     <button type="submit">Se connecter</button>
   </form>
   <div id="message"></div>
@@ -117,52 +108,53 @@ togglePassword.addEventListener('click', () => {
   togglePassword.classList.toggle('fa-eye-slash');
 });
 
-// Connexion
+// Fonction de connexion
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   message.textContent = '';
   
-  const input = document.getElementById('userOrEmail').value.trim();
+  const userOrEmail = document.getElementById('userOrEmail').value.trim();
   const password = passwordInput.value;
-  let email = input;
 
   try {
-    // Si ce n'est pas un email, chercher par username
-    if (!input.includes('@')) {
-      const query = await db.collection('users').where('username', '==', input).get();
-      if (!query.empty) {
-        email = query.docs[0].data().email;
+    let email = userOrEmail;
+
+    // Si l'utilisateur a saisi un pseudo
+    if (!userOrEmail.includes('@')) {
+      // On lit depuis /usernames qui est public
+      const snapshot = await db.collection('usernames').doc(userOrEmail).get();
+      if (!snapshot.exists) throw new Error("Pseudo non trouvé !");
+      email = snapshot.data().email;
+    }
+
+    // Connexion Firebase Auth
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    const uid = userCredential.user.uid;
+
+    // Récupérer les infos Firestore
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (!userDoc.exists) throw new Error("Impossible de récupérer les données utilisateur !");
+
+    const role = userDoc.data().role || 'user';
+
+    message.textContent = `✅ Connexion réussie ! Rôle : ${role}`;
+    message.className = 'success';
+
+    // Redirection selon rôle (exemple)
+    setTimeout(() => {
+      if (role === 'admin') {
+        window.location.href = "admin-dashboard.html";
       } else {
-        throw new Error("❌ Utilisateur non trouvé !");
+        window.location.href = "dashboard.html";
       }
-    }
-
-    // Connexion Firebase
-    await auth.signInWithEmailAndPassword(email, password);
-
-    // Récupérer rôle
-    const userDoc = await db.collection('users').where('email', '==', email).get();
-    const role = userDoc.docs[0].data().role || 'user';
-
-    // Redirection selon rôle
-    if (role === 'admin') {
-      window.location.href = "admin-dashboard.html";
-    } else {
-      window.location.href = "dashboard.html";
-    }
+    }, 1500);
 
   } catch (err) {
-    if (err.code === 'auth/wrong-password') {
-      message.textContent = "❌ Mot de passe incorrect.";
-    } else if (err.code === 'auth/user-not-found') {
-      message.textContent = "❌ Email non trouvé.";
-    } else {
-      message.textContent = err.message;
-    }
+    console.error(err);
+    message.textContent = "❌ " + err.message;
     message.className = 'error';
   }
 });
 </script>
 </body>
-  </html>
-  
+</html>
