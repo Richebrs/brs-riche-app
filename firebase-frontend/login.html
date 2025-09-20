@@ -24,23 +24,32 @@ body {
   max-width: 400px;
   text-align: center;
 }
-h1 { color:#0d47a1; margin-bottom:20px; }
+h1 {
+  color: #0d47a1;
+  margin-bottom: 20px;
+  font-size: 2em;
+}
 input[type="text"], input[type="password"] {
   width: 100%;
   padding: 12px 14px;
-  margin: 8px 0;
+  margin: 8px 0 4px 0;
   border: 1px solid #ccc;
   border-radius: 10px;
+  font-size: 1em;
 }
-.password-wrapper {
+input:focus {
+  border-color: #1976d2;
+  outline: none;
+}
+.password-container {
   position: relative;
 }
-.password-wrapper i {
+.password-container i {
   position: absolute;
-  top: 35%;
+  top: 12px;
   right: 12px;
   cursor: pointer;
-  color:#555;
+  color: #555;
 }
 button {
   background: #ffcc00;
@@ -53,11 +62,11 @@ button {
   width: 100%;
   margin-top: 16px;
 }
-button:hover { background:#ffd633; }
+button:hover { background: #ffd633; }
 #message { margin-top: 12px; font-weight: bold; }
 .success { color: green; }
 .error { color: red; }
-a { display:block; margin-top:12px; color:#1976d2; }
+a { display:block; margin-top:12px; color:#1976d2; text-decoration:none; }
 a:hover { text-decoration: underline; }
 </style>
 
@@ -80,11 +89,13 @@ const db = firebase.firestore();
 <div id="login-container">
   <h1>🔑 Connexion</h1>
   <form id="login-form">
-    <input type="text" id="identifier" placeholder="Nom d’utilisateur ou Email" required/>
-    <div class="password-wrapper">
+    <input type="text" id="userOrEmail" placeholder="Nom d’utilisateur ou Email" required/>
+    
+    <div class="password-container">
       <input type="password" id="password" placeholder="Mot de passe" required/>
-      <i class="fa fa-eye" id="togglePassword"></i>
+      <i id="togglePassword" class="fas fa-eye"></i>
     </div>
+
     <button type="submit">Se connecter</button>
   </form>
   <div id="message"></div>
@@ -93,53 +104,50 @@ const db = firebase.firestore();
 </div>
 
 <script>
-document.getElementById("togglePassword").addEventListener("click", ()=>{
-  const pwd = document.getElementById("password");
-  pwd.type = pwd.type === "password" ? "text" : "password";
-});
-
 const form = document.getElementById('login-form');
 const message = document.getElementById('message');
+const togglePassword = document.getElementById('togglePassword');
+const passwordInput = document.getElementById('password');
 
-form.addEventListener('submit',(e)=>{
-  e.preventDefault();
-  message.textContent = "";
-  const identifier = document.getElementById('identifier').value.trim();
-  const password = document.getElementById('password').value;
-
-  // Si email direct
-  if(identifier.includes("@")){
-    signIn(identifier,password);
-  }else{
-    // Chercher l’email correspondant au username
-    db.collection("users").where("username","==",identifier).get()
-    .then(snapshot=>{
-      if(snapshot.empty){
-        throw new Error("Nom d’utilisateur introuvable");
-      }
-      const email = snapshot.docs[0].data().email;
-      return signIn(email,password);
-    })
-    .catch(err=>{
-      message.textContent = "❌ " + err.message;
-      message.className = "error";
-    });
-  }
+// Afficher / Masquer mot de passe
+togglePassword.addEventListener('click', () => {
+  const type = passwordInput.type === 'password' ? 'text' : 'password';
+  passwordInput.type = type;
+  togglePassword.classList.toggle('fa-eye-slash');
 });
 
-function signIn(email,password){
-  auth.signInWithEmailAndPassword(email,password)
-  .then(()=>{
+// Connexion
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  message.textContent = '';
+  
+  const userOrEmail = document.getElementById('userOrEmail').value.trim();
+  const password = passwordInput.value;
+
+  try {
+    let email = userOrEmail;
+
+    // Vérifier si c'est un username
+    if (!userOrEmail.includes('@')) {
+      const query = await db.collection('users').where('username','==',userOrEmail).get();
+      if (!query.empty) {
+        email = query.docs[0].data().email;
+      } else {
+        throw new Error("Utilisateur non trouvé !");
+      }
+    }
+
+    // Sign in
+    await auth.signInWithEmailAndPassword(email, password);
     message.textContent = "✅ Connexion réussie ! Redirection...";
-    message.className = "success";
-    setTimeout(()=>{ window.location.href="home.html"; },2000);
-  })
-  .catch(err=>{
+    message.className = 'success';
+
+    setTimeout(() => { window.location.href = "dashboard.html"; }, 2000);
+  } catch(err) {
     message.textContent = "❌ " + err.message;
-    message.className = "error";
-  });
-}
+    message.className = 'error';
+  }
+});
 </script>
 </body>
-  </html>
-  
+</html>
