@@ -7,10 +7,96 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Firebase v10 modulaire -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+  import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+    authDomain: "brs-riche-2.firebaseapp.com",
+    projectId: "brs-riche-2",
+    storageBucket: "brs-riche-2.appspot.com",
+    messagingSenderId: "313874599780",
+    appId: "1:313874599780:web:xxxxxx"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const translations = {
+    fr: { title:"💎 Dashboard BRS RICHE", disponible:"Disponible", retire:"Retiré", total:"Total", history:"📜 Mes Historiques", deposit:"Dépôt", withdraw:"Retrait", referral:"Parrainage", hotels:"Hotels", residences:"Résidences", myHotels:"Mes Hotels", myResidences:"Mes Residences", profile:"Profil", hello:"Bonjour" },
+    en: { title:"💎 BRS Riche Dashboard", disponible:"Available", retire:"Withdrawn", total:"Total", history:"📜 My History", deposit:"Deposit", withdraw:"Withdraw", referral:"Referral", hotels:"Hotels", residences:"Residences", myHotels:"My Hotels", myResidences:"My Residences", profile:"Profile", hello:"Hello" },
+    es: { title:"💎 Panel BRS Riche", disponible:"Disponible", retire:"Retirado", total:"Total", history:"📜 Mi Historial", deposit:"Depósito", withdraw:"Retiro", referral:"Referidos", hotels:"Hoteles", residences:"Residencias", myHotels:"Mis Hoteles", myResidences:"Mis Residencias", profile:"Perfil", hello:"Hola" }
+  };
+
+  function setLang(lang, userName="") {
+    localStorage.setItem("lang", lang);
+    const t = translations[lang];
+    document.getElementById("title").innerText = t.title;
+    document.getElementById("lbl-disponible").innerText = t.disponible;
+    document.getElementById("lbl-retire").innerText = t.retire;
+    document.getElementById("lbl-total").innerText = t.total;
+    document.getElementById("btn-history").innerText = t.history;
+    document.getElementById("menu-deposit").innerText = t.deposit;
+    document.getElementById("menu-withdraw").innerText = t.withdraw;
+    document.getElementById("menu-referral").innerText = t.referral;
+    document.getElementById("menu-hotels").innerText = t.hotels;
+    document.getElementById("menu-residences").innerText = t.residences;
+    document.getElementById("menu-my-hotels").innerText = t.myHotels;
+    document.getElementById("menu-my-residences").innerText = t.myResidences;
+    document.getElementById("menu-profile").innerText = t.profile;
+    if(userName) document.getElementById("user-info").innerText = `${t.hello}, ${userName}`;
+  }
+
+  let currentUserName = "";
+  const langBtn = document.querySelector(".lang-btn");
+  const langMenu = document.getElementById("lang-menu");
+
+  langBtn.addEventListener("click", ()=> { langMenu.style.display = langMenu.style.display==="block" ? "none" : "block"; });
+  langMenu.querySelectorAll("div").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const lang = el.dataset.lang;
+      setLang(lang, currentUserName);
+      langMenu.style.display="none";
+    });
+  });
+
+  onAuthStateChanged(auth, user => {
+    if(user){
+      document.body.style.display = "block";
+      currentUserName = user.displayName || user.email.split('@')[0];
+      const savedLang = localStorage.getItem("lang") || "fr";
+      setLang(savedLang, currentUserName);
+
+      const userRef = doc(db, "users", user.uid);
+      onSnapshot(userRef, async docSnap => {
+        if(docSnap.exists()){
+          const data = docSnap.data();
+          const available = data.balance ?? 0;
+          const withdrawn = data.totalWithdrawn ?? 0;
+          const total = available + withdrawn;
+
+          document.getElementById("balance-available").innerText = `$${available.toFixed(2)}`;
+          document.getElementById("balance-withdrawn").innerText = `$${withdrawn.toFixed(2)}`;
+          document.getElementById("balance-total").innerText = `$${total.toFixed(2)}`;
+
+          if(data.role === "Admis"){
+            document.getElementById("admin-menu").style.display = "grid";
+          }
+
+          if(total !== data.balanceTotal){
+            await updateDoc(userRef, { balanceTotal: total });
+          }
+        }
+      });
+    } else {
+      window.location.href="login.html";
+    }
+  });
+</script>
 
 <style>
 body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; user-select:none; display:none; overflow-x:hidden; }
@@ -78,89 +164,6 @@ header .user-info { margin-top:8px; font-size:0.95em; opacity:0.9; }
 </div>
 
 <a href="presentation.html" class="presentation-btn">📖 Présentation</a>
-
-<script>
-document.addEventListener("copy", e=>e.preventDefault());
-document.addEventListener("cut", e=>e.preventDefault());
-document.addEventListener("contextmenu", e=>e.preventDefault());
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
-  authDomain: "brs-riche-2.firebaseapp.com",
-  projectId: "brs-riche-2",
-  storageBucket: "brs-riche-2.appspot.com",
-  messagingSenderId: "313874599780",
-  appId: "1:313874599780:web:xxxxxx"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-const translations = {
-  fr: { title:"💎 Dashboard BRS RICHE", disponible:"Disponible", retire:"Retiré", total:"Total", history:"📜 Mes Historiques", deposit:"Dépôt", withdraw:"Retrait", referral:"Parrainage", hotels:"Hotels", residences:"Résidences", myHotels:"Mes Hotels", myResidences:"Mes Résidences", profile:"Profil", hello:"Bonjour" },
-  en: { title:"💎 BRS Riche Dashboard", disponible:"Available", retire:"Withdrawn", total:"Total", history:"📜 My History", deposit:"Deposit", withdraw:"Withdraw", referral:"Referral", hotels:"Hotels", residences:"Residences", myHotels:"My Hotels", myResidences:"My Residences", profile:"Profile", hello:"Hello" },
-  es: { title:"💎 Panel BRS Riche", disponible:"Disponible", retire:"Retirado", total:"Total", history:"📜 Mi Historial", deposit:"Depósito", withdraw:"Retiro", referral:"Referidos", hotels:"Hoteles", residences:"Residencias", myHotels:"Mis Hoteles", myResidences:"Mis Residencias", profile:"Perfil", hello:"Hola" }
-};
-
-function setLang(lang, userName=""){
-  localStorage.setItem("lang", lang);
-  const t = translations[lang];
-  document.getElementById("title").innerText = t.title;
-  document.getElementById("lbl-disponible").innerText = t.disponible;
-  document.getElementById("lbl-retire").innerText = t.retire;
-  document.getElementById("lbl-total").innerText = t.total;
-  document.getElementById("btn-history").innerText = t.history;
-  document.getElementById("menu-deposit").innerText = t.deposit;
-  document.getElementById("menu-withdraw").innerText = t.withdraw;
-  document.getElementById("menu-referral").innerText = t.referral;
-  document.getElementById("menu-hotels").innerText = t.hotels;
-  document.getElementById("menu-residences").innerText = t.residences;
-  document.getElementById("menu-my-hotels").innerText = t.myHotels;
-  document.getElementById("menu-my-residences").innerText = t.myResidences;
-  document.getElementById("menu-profile").innerText = t.profile;
-  if(userName){
-    document.getElementById("user-info").innerText = `${t.hello}, ${userName}`;
-  }
-}
-
-const langBtn = document.querySelector(".lang-btn");
-const langMenu = document.getElementById("lang-menu");
-langBtn.addEventListener("click", ()=> { langMenu.style.display = langMenu.style.display==="block" ? "none" : "block"; });
-langMenu.querySelectorAll("div").forEach(el=>{ el.addEventListener("click", ()=>{ const lang = el.dataset.lang; setLang(lang, currentUserName); langMenu.style.display="none"; }); });
-
-let currentUserName="";
-auth.onAuthStateChanged(user=>{
-  if(user){
-    document.body.style.display="block";
-    currentUserName = user.displayName || user.email.split('@')[0];
-    const savedLang = localStorage.getItem("lang") || "fr";
-    setLang(savedLang, currentUserName);
-
-    const userRef = db.collection("users").doc(user.uid);
-    userRef.onSnapshot(async doc=>{
-      if(doc.exists){
-        const data = doc.data();
-        const available = data.balanceAvailable ?? data.balance ?? 0;
-        const withdrawn = data.balanceWithdrawn ?? 0;
-        let total = available + withdrawn;
-        if(total !== data.balanceTotal){
-          await userRef.update({ balanceTotal: total });
-        }
-        document.getElementById("balance-available").innerText = `$${available.toFixed(2)}`;
-        document.getElementById("balance-withdrawn").innerText = `$${withdrawn.toFixed(2)}`;
-        document.getElementById("balance-total").innerText = `$${total.toFixed(2)}`;
-
-        if(data.role === "Admis"){
-          document.getElementById("admin-menu").style.display = "grid";
-        }
-      }
-    });
-  } else {
-    window.location.href="login.html";
-  }
-});
-</script>
 </body>
-</html>
-
-  
+    </html>
+    
