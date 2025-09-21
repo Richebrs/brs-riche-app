@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - BRS Riche 2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body { font-family:'Segoe UI',sans-serif; margin:0; padding:0;
+      background:#f4f7fb; color:#333; user-select:none; display:none; overflow-x:hidden; }
+    header { background:#0d47a1; color:#fff; padding:20px; text-align:center; position:relative; }
+    header h1 { margin:0; font-size:1.6em; }
+    header .user-info { margin-top:8px; font-size:0.95em; opacity:0.9; }
+
+    .balance-card { background:#fff; margin:20px; padding:20px; border-radius:16px;
+      box-shadow:0 6px 16px rgba(0,0,0,0.15); display:flex; justify-content:space-between; gap:20px; }
+    .balance-box { flex:1; text-align:center; }
+    .balance-box h3 { margin:0; font-size:1em; color:#0d47a1; }
+    .balance-box p { margin:8px 0 0; font-size:1.4em; font-weight:bold; }
+
+    .menu { display:grid; grid-template-columns:repeat(auto-fit,minmax(100px,1fr));
+      gap:15px; margin:20px; }
+    .menu a { background:#ffcc00; color:#0d47a1; border-radius:14px; text-align:center;
+      font-weight:bold; text-decoration:none; padding:20px 10px;
+      box-shadow:0 6px 14px rgba(0,0,0,0.15);
+      transition:transform 0.2s, background 0.2s; }
+    .menu a i { display:block; font-size:2em; margin-bottom:8px; }
+    .menu a:hover { transform:translateY(-4px); background:#e6b800; }
+
+    /* Menu Admin */
+    .menu-admin { margin:20px; }
+    .menu-admin h2 { font-size:1.2em; color:#0d47a1; margin-bottom:10px; }
+    .menu-admin .menu { background:#fff3cd; border-radius:12px; padding:10px; }
+
+    @media(max-width:768px){
+      .balance-card { flex-direction:column; text-align:center; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>💎 Dashboard BRS Riche 2</h1>
+  <div class="user-info" id="user-info"></div>
+</header>
+
+<!-- Cartes de solde -->
+<div class="balance-card">
+  <div class="balance-box"><h3>Disponible</h3><p id="balance-available">$0.00</p></div>
+  <div class="balance-box"><h3>Retiré</h3><p id="balance-withdrawn">$0.00</p></div>
+  <div class="balance-box"><h3>Total</h3><p id="balance-total">$0.00</p></div>
+</div>
+
+<!-- Menu standard -->
+<div class="menu">
+  <a href="deposit.html"><i class="fas fa-wallet"></i>Dépôt</a>
+  <a href="withdraw.html"><i class="fas fa-hand-holding-dollar"></i>Retrait</a>
+  <a href="referral.html"><i class="fas fa-users"></i>Parrainage</a>
+  <a href="profile.html"><i class="fas fa-user"></i>Profil</a>
+</div>
+
+<!-- Menu Admin (masqué par défaut) -->
+<div class="menu-admin" id="menu-admin" style="display:none;">
+  <h2>⚙️ Espace Admin</h2>
+  <div class="menu">
+    <a href="admin-dashboard.html"><i class="fas fa-chart-line"></i>Dashboard Admin</a>
+    <a href="manage-users.html"><i class="fas fa-user-cog"></i>Gérer Utilisateurs</a>
+    <a href="settings.html"><i class="fas fa-cogs"></i>Paramètres</a>
+  </div>
+</div>
+
+<script>
+  // Protection contre le clic droit & copie
+  document.addEventListener("copy", e=>e.preventDefault());
+  document.addEventListener("cut", e=>e.preventDefault());
+  document.addEventListener("contextmenu", e=>e.preventDefault());
+
+  // 🔑 Config Firebase (BRS-Riche-2)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+    authDomain: "brs-riche-2.firebaseapp.com",
+    projectId: "brs-riche-2",
+    storageBucket: "brs-riche-2.appspot.com",
+    messagingSenderId: "313874599780",
+    appId: "1:313874599780:web:xxxxxx" // Mets ton appId complet ici
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  let currentUserName = "";
+
+  auth.onAuthStateChanged(user=>{
+    if(user){
+      document.body.style.display="block";
+      currentUserName = user.displayName || user.email.split('@')[0];
+      document.getElementById("user-info").innerText = "Connecté : " + currentUserName;
+
+      const userRef = db.collection("users").doc(user.uid);
+
+      userRef.onSnapshot(doc=>{
+        if(doc.exists){
+          const data = doc.data();
+          const available = data.balanceAvailable ?? 0;
+          const withdrawn = data.balanceWithdrawn ?? 0;
+          const total = available + withdrawn;
+
+          document.getElementById("balance-available").innerText = `$${available.toFixed(2)}`;
+          document.getElementById("balance-withdrawn").innerText = `$${withdrawn.toFixed(2)}`;
+          document.getElementById("balance-total").innerText = `$${total.toFixed(2)}`;
+
+          // Vérifie rôle admin
+          if(data.role && data.role.toLowerCase()==="admis"){
+            document.getElementById("menu-admin").style.display="block";
+          }
+        }
+      });
+    } else {
+      window.location.href="login.html";
+    }
+  });
+</script>
+
+</body>
+    </html>
+  
