@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mes Historiques - BRS RICHE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; display:none; }
+header { background:#0d47a1; color:#fff; padding:20px; text-align:center; position:relative; }
+header h1 { margin:0; }
+.user-info { margin-top:8px; font-size:0.95em; opacity:0.9; }
+.lang-dropdown { position:absolute; top:20px; right:60px; }
+.lang-btn { cursor:pointer; font-size:1.3em; }
+.lang-menu { display:none; position:absolute; top:120%; right:0; background:#fff; color:#333; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.2); min-width:120px; z-index:10; }
+.lang-menu div { padding:8px 12px; cursor:pointer; }
+.lang-menu div:hover { background:#f0f0f0; }
+.dashboard-btn { position:absolute; top:20px; right:20px; font-size:1.5em; color:#fff; text-decoration:none; }
+.section { background:#fff; margin:20px; padding:20px; border-radius:14px; box-shadow:0 6px 16px rgba(0,0,0,0.15); }
+.section h2 { margin-top:0; color:#0d47a1; }
+.list-item { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee; }
+.total { text-align:right; font-weight:bold; margin-top:10px; }
+.empty { text-align:center; color:#888; font-style:italic; padding:10px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">💎 Mes Historiques</h1>
+  <div class="user-info" id="user-info"></div>
+
+  <!-- Langues -->
+  <div class="lang-dropdown">
+    <span class="lang-btn">🌐</span>
+    <div class="lang-menu" id="lang-menu">
+      <div data-lang="fr">🇫🇷 Français</div>
+      <div data-lang="en">🇬🇧 English</div>
+      <div data-lang="es">🇪🇸 Español</div>
+    </div>
+  </div>
+
+  <!-- Bouton Dashboard -->
+  <a href="dashboard.html" class="dashboard-btn" title="Retour Dashboard"><i class="fas fa-arrow-left"></i></a>
+</header>
+
+<!-- Sections -->
+<div class="section" id="transactions-section">
+  <h2 id="transactions-title">Transactions</h2>
+  <div id="transactions-list"></div>
+  <div class="total" id="transactions-total"></div>
+</div>
+
+<div class="section" id="referrals-section">
+  <h2 id="referrals-title">Parrainages</h2>
+  <div id="referrals-list"></div>
+</div>
+
+<div class="section" id="hotels-section">
+  <h2 id="hotels-title">Hôtels</h2>
+  <div id="hotels-list"></div>
+</div>
+
+<div class="section" id="residences-section">
+  <h2 id="residences-title">Résidences</h2>
+  <div id="residences-list"></div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+  authDomain: "brs-riche-2.firebaseapp.com",
+  projectId: "brs-riche-2",
+  storageBucket: "brs-riche-2.appspot.com",
+  messagingSenderId: "313874599780",
+  appId: "1:313874599780:web:xxxxxx"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Traductions
+const translations = {
+  fr: { 
+    title:"💎 Mes Historiques", hello:"Bonjour", transactions:"Transactions", referrals:"Parrainages",
+    hotels:"Hôtels", residences:"Résidences", total:"Total"
+  },
+  en: { 
+    title:"💎 My History", hello:"Hello", transactions:"Transactions", referrals:"Referrals",
+    hotels:"Hotels", residences:"Residences", total:"Total"
+  },
+  es: { 
+    title:"💎 Mis Historiales", hello:"Hola", transactions:"Transacciones", referrals:"Referidos",
+    hotels:"Hoteles", residences:"Residencias", total:"Total"
+  }
+};
+
+// Format date
+function formatDate(ts){ const date=ts.toDate?ts.toDate():new Date(ts); return date.toLocaleDateString()+' '+date.toLocaleTimeString(); }
+
+// Changer langue
+function setLang(lang,userName=""){
+  localStorage.setItem("lang",lang);
+  const t=translations[lang];
+  document.getElementById("title").innerText=t.title;
+  document.getElementById("transactions-title").innerText=t.transactions;
+  document.getElementById("referrals-title").innerText=t.referrals;
+  document.getElementById("hotels-title").innerText=t.hotels;
+  document.getElementById("residences-title").innerText=t.residences;
+  if(userName) document.getElementById("user-info").innerText=`${t.hello}, ${userName}`;
+}
+
+// Langues menu
+const langBtn=document.querySelector(".lang-btn");
+const langMenu=document.getElementById("lang-menu");
+langBtn.addEventListener("click",()=>{langMenu.style.display=langMenu.style.display==="block"?"none":"block";});
+langMenu.querySelectorAll("div").forEach(el=>el.addEventListener("click",()=>{const lang=el.dataset.lang; setLang(lang,currentUserName); langMenu.style.display="none";}));
+
+let currentUserName="";
+
+// Connexion et affichage temps réel
+auth.onAuthStateChanged(user=>{
+  if(!user){ window.location.href="login.html"; return; }
+  document.body.style.display="block";
+  currentUserName=user.displayName||user.email.split('@')[0];
+  const savedLang=localStorage.getItem("lang")||"fr";
+  setLang(savedLang,currentUserName);
+  const uid=user.uid;
+
+  // Transactions
+  const transactionsList=document.getElementById("transactions-list");
+  const transactionsTotalEl=document.getElementById("transactions-total");
+  db.collection("transactions").where("userId","==",uid).orderBy("createdAt","desc").onSnapshot(snapshot=>{
+    transactionsList.innerHTML=""; let total=0;
+    if(snapshot.empty){ transactionsList.innerHTML='<div class="empty">Aucune transaction</div>'; transactionsTotalEl.innerText=''; return; }
+    snapshot.forEach(doc=>{ const data=doc.data(); const amount=data.amount??0; total+=amount;
+      const div=document.createElement("div"); div.className="list-item";
+      div.innerHTML=`<span>${data.type}</span><span>$${amount.toFixed(2)} - ${formatDate(data.createdAt)}</span>`;
+      transactionsList.appendChild(div);
+    });
+    transactionsTotalEl.innerText=`${translations[savedLang].total}: $${total.toFixed(2)}`;
+  });
+
+  // Parrainages
+  const referralsList=document.getElementById("referrals-list");
+  db.collection("referrals").where("userId","==",uid).orderBy("createdAt","desc").onSnapshot(snapshot=>{
+    referralsList.innerHTML="";
+    if(snapshot.empty){ referralsList.innerHTML='<div class="empty">Aucun parrainage</div>'; return; }
+    snapshot.forEach(doc=>{ const data=doc.data();
+      const div=document.createElement("div"); div.className="list-item";
+      div.innerHTML=`<span>Niveau ${data.level}</span><span>${formatDate(data.createdAt)}</span>`;
+      referralsList.appendChild(div);
+    });
+  });
+
+  // Hôtels
+  const hotelsList=document.getElementById("hotels-list");
+  db.collection("hotels").where("userId","==",uid).orderBy("createdAt","desc").onSnapshot(snapshot=>{
+    hotelsList.innerHTML="";
+    if(snapshot.empty){ hotelsList.innerHTML='<div class="empty">Aucun hôtel ajouté</div>'; return; }
+    snapshot.forEach(doc=>{ const data=doc.data();
+      const div=document.createElement("div"); div.className="list-item";
+      div.innerHTML=`<span>${data.name}</span><span>${formatDate(data.createdAt)}</span>`;
+      hotelsList.appendChild(div);
+    });
+  });
+
+  // Résidences
+  const residencesList=document.getElementById("residences-list");
+  db.collection("residences").where("userId","==",uid).orderBy("createdAt","desc").onSnapshot(snapshot=>{
+    residencesList.innerHTML="";
+    if(snapshot.empty){ residencesList.innerHTML='<div class="empty">Aucune résidence ajoutée</div>'; return; }
+    snapshot.forEach(doc=>{ const data=doc.data();
+      const div=document.createElement("div"); div.className="list-item";
+      div.innerHTML=`<span>${data.name}</span><span>${formatDate(data.createdAt)}</span>`;
+      residencesList.appendChild(div);
+    });
+  });
+});
+</script>
+</body>
+</html>
+
+  
