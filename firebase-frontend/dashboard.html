@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -41,8 +42,8 @@ header .user-info { margin-top:8px; font-size:0.95em; opacity:0.9; }
 @media(max-width:768px){ .balance-card { flex-direction:column; text-align:center; } }
 </style>
 </head>
-<body>
 
+<body>
 <header>
   <h1 id="title">💎 Dashboard BRS RICHE</h1>
   <div class="user-info" id="user-info"></div>
@@ -95,16 +96,16 @@ const firebaseConfig = {
   projectId: "brs-riche-2",
   storageBucket: "brs-riche-2.appspot.com",
   messagingSenderId: "313874599780",
-  appId: "1:313874599780:web:xxxxxx" // Remplacer par le vrai appId
+  appId: "1:313874599780:web:xxxxxx"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
 const translations = {
-  fr:{ title:"💎 Dashboard BRS RICHE", disponible:"Disponible", retire:"Retiré", total:"Total", history:"📜 Mes Historiques", deposit:"Dépôt", withdraw:"Retrait", referral:"Parrainage", hotels:"Hotels", residences:"Résidences", myHotels:"Mes Hotels", myResidences:"Mes Résidences", profile:"Profil", hello:"Bonjour" },
-  en:{ title:"💎 BRS Riche Dashboard", disponible:"Available", retire:"Withdrawn", total:"Total", history:"📜 My History", deposit:"Deposit", withdraw:"Withdraw", referral:"Referral", hotels:"Hotels", residences:"Residences", myHotels:"My Hotels", myResidences:"My Residences", profile:"Profile", hello:"Hello" },
-  es:{ title:"💎 Panel BRS Riche", disponible:"Disponible", retire:"Retirado", total:"Total", history:"📜 Mi Historial", deposit:"Depósito", withdraw:"Retiro", referral:"Referidos", hotels:"Hoteles", residences:"Residencias", myHotels:"Mis Hoteles", myResidences:"Mis Residencias", profile:"Perfil", hello:"Hola" }
+  fr: { title:"💎 Dashboard BRS RICHE", disponible:"Disponible", retire:"Retiré", total:"Total", history:"📜 Mes Historiques", deposit:"Dépôt", withdraw:"Retrait", referral:"Parrainage", hotels:"Hotels", residences:"Résidences", myHotels:"Mes Hotels", myResidences:"Mes Résidences", profile:"Profil", hello:"Bonjour" },
+  en: { title:"💎 BRS Riche Dashboard", disponible:"Available", retire:"Withdrawn", total:"Total", history:"📜 My History", deposit:"Deposit", withdraw:"Withdraw", referral:"Referral", hotels:"Hotels", residences:"Residences", myHotels:"My Hotels", myResidences:"My Residences", profile:"Profile", hello:"Hello" },
+  es: { title:"💎 Panel BRS Riche", disponible:"Disponible", retire:"Retirado", total:"Total", history:"📜 Mi Historial", deposit:"Depósito", withdraw:"Retiro", referral:"Referidos", hotels:"Hoteles", residences:"Residencias", myHotels:"Mis Hoteles", myResidences:"Mis Residencias", profile:"Perfil", hello:"Hola" }
 };
 
 function setLang(lang, userName=""){
@@ -130,7 +131,7 @@ function setLang(lang, userName=""){
 
 const langBtn = document.querySelector(".lang-btn");
 const langMenu = document.getElementById("lang-menu");
-langBtn.addEventListener("click", ()=>{ langMenu.style.display = langMenu.style.display==="block" ? "none" : "block"; });
+langBtn.addEventListener("click", ()=> { langMenu.style.display = langMenu.style.display==="block" ? "none" : "block"; });
 langMenu.querySelectorAll("div").forEach(el=>{ el.addEventListener("click", ()=>{ const lang = el.dataset.lang; setLang(lang, currentUserName); langMenu.style.display="none"; }); });
 
 let currentUserName="";
@@ -146,13 +147,22 @@ auth.onAuthStateChanged(user=>{
       if(doc.exists){
         const data = doc.data();
         const wallet = data.wallet || {};
+
         const available = wallet.balance ?? 0;
         const withdrawn = wallet.totalWithdrawn ?? 0;
-        const total = wallet.totalGains ?? 0;
+        const total = available + withdrawn;
+
+        // Mettre à jour Firestore si nécessaire
+        if(wallet.totalGains !== total){
+          await userRef.update({ "wallet.totalGains": total });
+        }
+
+        // Affichage en temps réel
         document.getElementById("balance-available").innerText = `$${available.toFixed(2)}`;
         document.getElementById("balance-withdrawn").innerText = `$${withdrawn.toFixed(2)}`;
         document.getElementById("balance-total").innerText = `$${total.toFixed(2)}`;
 
+        // Menu admin visible uniquement si role = "Admis"
         if(data.role === "Admis"){
           document.getElementById("admin-menu").style.display = "grid";
         }
@@ -165,5 +175,6 @@ auth.onAuthStateChanged(user=>{
 </script>
 
 </body>
-                                                                      </html>
-    
+</html>
+
+  
