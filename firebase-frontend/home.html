@@ -17,13 +17,13 @@
       touch-action: manipulation;
     }
     #home-container { max-width: 1100px; margin:auto; padding:0 16px 60px; }
-    #google_translate_element { text-align:center; margin:12px 0; }
 
     /* HERO */
     .hero {
       background: linear-gradient(135deg,#0d47a1,#1976d2);
       color:#fff; text-align:center;
       padding:64px 20px; border-radius:14px; margin:24px 0 40px;
+      position: relative;
     }
     .hero h1 { font-size:2.2em; margin:0 0 12px; }
     .hero p { font-size:1.1em; margin:0 0 22px; }
@@ -41,6 +41,60 @@
     .btn-outline { color:#fff; text-decoration:underline; border:2px solid #fff; }
     .btn i { margin-right:8px; }
     .btn:hover { transform:translateY(-2px); }
+
+    /* DROPDOWN LANGUES */
+    .lang-dropdown {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    .lang-btn {
+      background: #ffcc00;
+      color: #0d47a1;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9em;
+      font-weight: bold;
+      transition: background 0.3s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .lang-btn:hover { background: #ffd633; }
+    .lang-menu {
+      display: none;
+      position: absolute;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      min-width: 180px;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+      z-index: 1000;
+      margin-top: 6px;
+      right: 0;
+    }
+    .lang-menu a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      color: #333;
+      text-decoration: none;
+      font-size: 0.9em;
+      transition: background 0.2s;
+    }
+    .lang-menu a:hover {
+      background: #f0f4ff;
+      color: #0d47a1;
+    }
+    .lang-menu img {
+      border-radius: 3px;
+      width: 20px;
+      height: 14px;
+      object-fit: cover;
+    }
+    .lang-dropdown:hover .lang-menu { display: block; }
 
     /* SECTIONS */
     .section { padding:48px 12px; background:#fff; border-radius:14px; margin:16px 0; }
@@ -112,15 +166,25 @@
 <body oncopy="return false" oncut="return false" onpaste="return false" oncontextmenu="return false">
 <div id="home-container">
 
-  <!-- GOOGLE TRANSLATE -->
-  <div id="google_translate_element"></div>
-
   <!-- HERO -->
   <header class="hero">
     <h1>🌍 Bienvenue sur <span style="color:#ffcc00;">BRS Riche</span></h1>
     <p>Investir facilement, gagner quotidiennement et bâtir un revenu durable 🚀</p>
     <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i>Créer un compte</a>
     <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i>Connexion</a>
+
+    <!-- Sélecteur de langues -->
+    <div class="lang-dropdown">
+      <button class="lang-btn">🌐 Langues ▾</button>
+      <div class="lang-menu">
+        <a href="?lang=fr"><img src="https://flagcdn.com/w20/fr.png" alt="FR"> Français</a>
+        <a href="?lang=en"><img src="https://flagcdn.com/w20/gb.png" alt="EN"> English</a>
+        <a href="?lang=es"><img src="https://flagcdn.com/w20/es.png" alt="ES"> Español</a>
+        <a href="?lang=de"><img src="https://flagcdn.com/w20/de.png" alt="DE"> Deutsch</a>
+        <a href="?lang=ar"><img src="https://flagcdn.com/w20/sa.png" alt="AR"> عربي</a>
+        <a href="?lang=zh"><img src="https://flagcdn.com/w20/cn.png" alt="ZH"> 中文</a>
+      </div>
+    </div>
   </header>
 
   <!-- QUI SOMMES-NOUS -->
@@ -165,29 +229,33 @@
       <div class="card">
         <i class="fas fa-building"></i>
         <h3>🏢 Résidence 1 – 30 $</h3>
-        <p>25 jours → +6 $ (Total 36 $)<br>
-        45 jours → +12 $ (Total 42 $)<br>
-        60 jours → +24 $ (Total 54 $)<br>
-        Capital + bonus payés à la fin</p>
+        <p>25 jours → +13,5 $ (Total 43,5 $)<br>
+           45 jours → +18 $ (Total 48 $)<br>
+           60 jours → +25,5 $ (Total 55,5 $)<br>
+           Capital + bonus payés à la fin
+        </p>
       </div>
 
       <div class="card">
         <i class="fas fa-building"></i>
         <h3>🏢 Résidence 2 – 45 $</h3>
-        <p>25 jours → +9 $ (Total 54 $)<br>
-        45 jours → +15 $ (Total 60 $)<br>
-        60 jours → +30 $ (Total 75 $)<br>
-        Retrait capital + bénéfices en fin de cycle</p>
+        <p>25 jours → +20,25 $ (Total 65,25 $)<br>
+           45 jours → +27 $ (Total 72 $)<br>
+           60 jours → +38,25 $ (Total 83,25 $)<br>
+           Retrait capital + bénéfices en fin de cycle
+        </p>
       </div>
 
       <div class="card">
         <i class="fas fa-building"></i>
         <h3>🏢 Résidence 3 – 80 $</h3>
-        <p>25 jours → +16 $ (Total 96 $)<br>
-        45 jours → +24 $ (Total 104 $)<br>
-        60 jours → +40 $ (Total 120 $)<br>
-        Capital + gains à la clôture</p>
+        <p>25 jours → +36 $ (Total 116 $)<br>
+           45 jours → +48 $ (Total 128 $)<br>
+           60 jours → +68 $ (Total 148 $)<br>
+           Capital + gains à la clôture
+        </p>
       </div>
+
     </div>
   </section>
 
@@ -227,14 +295,7 @@
   </footer>
 </div>
 
-<!-- GOOGLE TRANSLATE SCRIPT -->
 <script type="text/javascript">
-  function googleTranslateElementInit() {
-    new google.translate.TranslateElement({pageLanguage: 'fr', includedLanguages: 'en,es,de,it,zh,ar'}, 'google_translate_element');
-  }
-</script>
-<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-<script>
   // Bloquer certains raccourcis
   document.addEventListener('keydown', function(e){
     if ((e.ctrlKey || e.metaKey) && ['c','s','u','p','+','-','0'].includes(e.key.toLowerCase())) e.preventDefault();
@@ -242,5 +303,5 @@
   document.addEventListener('wheel', function(e){ if (e.ctrlKey) e.preventDefault(); }, {passive:false});
 </script>
 </body>
-  </html>
-  
+                                                                                 </html>
+      
