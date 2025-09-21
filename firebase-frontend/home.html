@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -61,6 +62,33 @@
     .card:hover { transform:translateY(-4px); }
     .card i { font-size:1.8em; color:#0d47a1; margin-bottom:8px; }
 
+    /* ROOMS (chambres hôtels) */
+    .rooms {
+      margin-top:18px;
+      text-align:left;
+      background:#f9fbff;
+      border-radius:10px;
+      padding:15px;
+      border:1px solid #d6e0f5;
+    }
+    .rooms h4 {
+      color:#0d47a1;
+      text-align:center;
+      margin-bottom:10px;
+    }
+    .rooms ul {
+      list-style:none;
+      padding:0;
+      margin:0;
+      line-height:1.8em;
+      font-size:0.95em;
+    }
+    .rooms li {
+      padding:6px 0;
+      border-bottom:1px dashed #ccc;
+    }
+    .rooms li:last-child { border-bottom:none; }
+
     /* CTA */
     .cta {
       text-align:center;
@@ -107,47 +135,68 @@
     <h2>📦 Nos Plans d’Investissement</h2>
     <p>Choisissez selon vos objectifs financiers :</p>
     <div class="cards">
+      
+      <!-- HÔTELS -->
       <div class="card">
         <i class="fas fa-hotel"></i>
         <h3>🏨 Hôtels Quotidiens (180 jours)</h3>
-        <p>Investissement : dès $10<br>
+        <p>Investissement : dès 10 $<br>
         Rendement : 1.5% → 5% par jour<br>
         Paiements : quotidiens, hebdomadaires et mensuels<br>
-        Retraits possibles dès $3</p>
+        Retraits possibles dès 3 $</p>
+
+        <!-- Détails chambres -->
+        <div class="rooms">
+          <h4>📊 Détails des Chambres</h4>
+          <ul>
+            <li>🏠 Chambre 1 : 10 $ → 1,5 % / j = 0,15 $ / j → 4,50 $ / mois</li>
+            <li>🏠 Chambre 2 : 25 $ → 2,0 % / j = 0,50 $ / j → 15,00 $ / mois</li>
+            <li>🏠 Chambre 3 : 50 $ → 2,5 % / j = 1,25 $ / j → 37,50 $ / mois</li>
+            <li>🏠 Chambre 4 : 100 $ → 3,0 % / j = 3,00 $ / j → 90,00 $ / mois</li>
+            <li>🏠 Chambre 5 : 200 $ → 3,5 % / j = 7,00 $ / j → 210,00 $ / mois</li>
+            <li>🏠 Chambre 6 : 300 $ → 4,0 % / j = 12,00 $ / j → 360,00 $ / mois</li>
+            <li>🏠 Chambre 7 : 500 $ → 4,5 % / j = 22,50 $ / j → 675,00 $ / mois</li>
+            <li>🏠 Chambre 8 : 800 $ → 5,0 % / j = 40,00 $ / j → 1 200,00 $ / mois</li>
+          </ul>
+        </div>
       </div>
+
+      <!-- Résidences -->
       <div class="card">
         <i class="fas fa-building"></i>
-        <h3>🏢 Résidence 1 – $30</h3>
-        <p>25 jours → +$6 (Total $36)<br>
-        45 jours → +$12 (Total $42)<br>
-        60 jours → +$24 (Total $54)<br>
+        <h3>🏢 Résidence 1 – 30 $</h3>
+        <p>25 jours → +6 $ (Total 36 $)<br>
+        45 jours → +12 $ (Total 42 $)<br>
+        60 jours → +24 $ (Total 54 $)<br>
         Capital + bonus payés à la fin</p>
       </div>
+
       <div class="card">
         <i class="fas fa-building"></i>
-        <h3>🏢 Résidence 2 – $45</h3>
-        <p>25 jours → +$9 (Total $54)<br>
-        45 jours → +$15 (Total $60)<br>
-        60 jours → +$30 (Total $75)<br>
+        <h3>🏢 Résidence 2 – 45 $</h3>
+        <p>25 jours → +9 $ (Total 54 $)<br>
+        45 jours → +15 $ (Total 60 $)<br>
+        60 jours → +30 $ (Total 75 $)<br>
         Retrait capital + bénéfices en fin de cycle</p>
       </div>
+
       <div class="card">
         <i class="fas fa-building"></i>
-        <h3>🏢 Résidence 3 – $80</h3>
-        <p>25 jours → +$16 (Total $96)<br>
-        45 jours → +$24 (Total $104)<br>
-        60 jours → +$40 (Total $120)<br>
+        <h3>🏢 Résidence 3 – 80 $</h3>
+        <p>25 jours → +16 $ (Total 96 $)<br>
+        45 jours → +24 $ (Total 104 $)<br>
+        60 jours → +40 $ (Total 120 $)<br>
         Capital + gains à la clôture</p>
       </div>
     </div>
   </section>
 
-  <!-- PROGRAMME DE PARRAINAGE -->
+  <!-- PARRAINAGE -->
   <section class="section">
     <h2>🤝 Programme de Parrainage</h2>
     <p>Invitez vos amis et gagnez automatiquement des commissions :</p>
     <ul>
-      <li>🔹 Niveau 1 (directs) : <strong>15%</strong> par jour sur leurs revenus</li>
+      <li>🔹 Niveau 1 (directs) : <strong>15%</strong> par jour</li>
       <li>🔹 Niveau 2 : <strong>10%</strong> par jour</li>
       <li>🔹 Niveau 3 : <strong>5%</strong> par jour</li>
     </ul>
@@ -159,8 +208,8 @@
     <h2>❓ FAQ</h2>
     <p><strong>💰 Comment commencer ?</strong> Créez un compte, choisissez un plan et investissez le montant souhaité.</p>
     <p><strong>🔒 Mon argent est-il sécurisé ?</strong> Oui, les dépôts sont protégés par la blockchain et des smart contracts.</p>
-    <p><strong>📈 Quand puis-je retirer mes gains ?</strong> Dès que vous avez atteint $3 minimum.</p>
-    <p><strong>🤝 Comment fonctionne le parrainage ?</strong> Vous recevez 15%, 10% et 5% par jour sur 3 niveaux de votre réseau.</p>
+    <p><strong>📈 Quand puis-je retirer mes gains ?</strong> Dès que vous avez atteint 3 $ minimum.</p>
+    <p><strong>🤝 Comment fonctionne le parrainage ?</strong> Vous recevez 15%, 10% et 5% par jour sur 3 niveaux.</p>
   </section>
 
   <!-- CTA -->
@@ -194,4 +243,4 @@
 </script>
 </body>
   </html>
-      
+  
