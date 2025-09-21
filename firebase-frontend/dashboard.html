@@ -13,8 +13,13 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; user-select:none; display:none; overflow-x:hidden; }
-header { background:#0d47a1; color:#fff; padding:20px; text-align:center; position:relative; }
+body {
+  font-family:'Segoe UI',sans-serif; margin:0; padding:0;
+  background:#f4f7fb; color:#333; user-select:none; display:none; overflow-x:hidden;
+}
+header {
+  background:#0d47a1; color:#fff; padding:20px; text-align:center; position:relative;
+}
 header h1 { margin:0; font-size:1.6em; }
 header .user-info { margin-top:8px; font-size:0.95em; opacity:0.9; }
 .lang-dropdown { position:absolute; top:20px; right:20px; }
@@ -22,26 +27,22 @@ header .user-info { margin-top:8px; font-size:0.95em; opacity:0.9; }
 .lang-menu { display:none; position:absolute; top:120%; right:0; background:#fff; color:#333; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.2); min-width:120px; z-index:10; }
 .lang-menu div { padding:8px 12px; cursor:pointer; }
 .lang-menu div:hover { background:#f0f0f0; }
-
 .balance-card { background:#fff; margin:20px; padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15); display:flex; justify-content:space-between; gap:20px; }
-.balance-box { flex:1; text-align:center; transition:transform 0.3s ease; }
+.balance-box { flex:1; text-align:center; }
 .balance-box h3 { margin:0; font-size:1em; color:#0d47a1; }
-.balance-box p { margin:8px 0 0; font-size:1.4em; font-weight:bold; transition: all 0.3s ease; }
-
+.balance-box p { margin:8px 0 0; font-size:1.4em; font-weight:bold; }
 .history-btn { display:block; margin:10px 20px; padding:15px; text-align:center; font-size:1.1em; font-weight:bold; color:#fff; background:#ff9800; border-radius:12px; text-decoration:none; box-shadow:0 4px 12px rgba(0,0,0,0.2); transition:background 0.2s; }
 .history-btn:hover { background:#e68900; }
-
 .menu { display:grid; grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); gap:15px; margin:20px; }
 .menu a { background:#ffcc00; color:#0d47a1; border-radius:14px; text-align:center; font-weight:bold; text-decoration:none; padding:20px 10px; box-shadow:0 6px 14px rgba(0,0,0,0.15); transition:transform 0.2s, background 0.2s; }
 .menu a i { display:block; font-size:2em; margin-bottom:8px; }
 .menu a:hover { transform:translateY(-4px); background:#e6b800; }
-
 .presentation-btn { display:block; margin:20px auto; padding:15px 25px; background:#0d47a1; color:#fff; font-size:1.2em; font-weight:bold; border:none; border-radius:14px; cursor:pointer; text-align:center; text-decoration:none; box-shadow:0 4px 12px rgba(0,0,0,0.2); }
 .presentation-btn:hover { background:#08306b; }
-
 @media(max-width:768px){ .balance-card { flex-direction:column; text-align:center; } }
 </style>
 </head>
+
 <body>
 <header>
   <h1 id="title">💎 Dashboard BRS RICHE</h1>
@@ -57,10 +58,9 @@ header .user-info { margin-top:8px; font-size:0.95em; opacity:0.9; }
 </header>
 
 <div class="balance-card">
-  <div class="balance-box"><h3 id="lbl-disponible">Disponible</h3><p id="balance-available">$0</p></div>
-  <div class="balance-box"><h3 id="lbl-gains">Gains</h3><p id="balance-gains">$0</p></div>
-  <div class="balance-box"><h3 id="lbl-retire">Retiré</h3><p id="balance-withdrawn">$0</p></div>
-  <div class="balance-box"><h3 id="lbl-total">Total</h3><p id="balance-total">$0</p></div>
+  <div class="balance-box"><h3 id="lbl-disponible">Disponible</h3><p id="balance-available">$0.00</p></div>
+  <div class="balance-box"><h3 id="lbl-retire">Retiré</h3><p id="balance-withdrawn">$0.00</p></div>
+  <div class="balance-box"><h3 id="lbl-total">Total</h3><p id="balance-total">$0.00</p></div>
 </div>
 
 <a href="history.html" class="history-btn" id="btn-history"><i class="fas fa-history"></i> Mes Historiques</a>
@@ -103,9 +103,9 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 const translations = {
-  fr:{title:"💎 Dashboard BRS RICHE", disponible:"Disponible", gains:"Gains", retire:"Retiré", total:"Total", history:"📜 Mes Historiques", deposit:"Dépôt", withdraw:"Retrait", referral:"Parrainage", hotels:"Hotels", residences:"Résidences", myHotels:"Mes Hotels", myResidences:"Mes Residences", profile:"Profil", hello:"Bonjour"},
-  en:{title:"💎 BRS Riche Dashboard", disponible:"Available", gains:"Gains", retire:"Withdrawn", total:"Total", history:"📜 My History", deposit:"Deposit", withdraw:"Withdraw", referral:"Referral", hotels:"Hotels", residences:"Residences", myHotels:"My Hotels", myResidences:"My Residences", profile:"Profile", hello:"Hello"},
-  es:{title:"💎 Panel BRS Riche", disponible:"Disponible", gains:"Ganancias", retire:"Retirado", total:"Total", history:"📜 Mi Historial", deposit:"Depósito", withdraw:"Retiro", referral:"Referidos", hotels:"Hoteles", residences:"Residencias", myHotels:"Mis Hoteles", myResidences:"Mis Residencias", profile:"Perfil", hello:"Hola"}
+  fr: { title:"💎 Dashboard BRS RICHE", disponible:"Disponible", retire:"Retiré", total:"Total", history:"📜 Mes Historiques", deposit:"Dépôt", withdraw:"Retrait", referral:"Parrainage", hotels:"Hotels", residences:"Résidences", myHotels:"Mes Hotels", myResidences:"Mes Résidences", profile:"Profil", hello:"Bonjour" },
+  en: { title:"💎 BRS Riche Dashboard", disponible:"Available", retire:"Withdrawn", total:"Total", history:"📜 My History", deposit:"Deposit", withdraw:"Withdraw", referral:"Referral", hotels:"Hotels", residences:"Residences", myHotels:"My Hotels", myResidences:"My Residences", profile:"Profile", hello:"Hello" },
+  es: { title:"💎 Panel BRS Riche", disponible:"Disponible", retire:"Retirado", total:"Total", history:"📜 Mi Historial", deposit:"Depósito", withdraw:"Retiro", referral:"Referidos", hotels:"Hoteles", residences:"Residencias", myHotels:"Mis Hoteles", myResidences:"Mis Residencias", profile:"Perfil", hello:"Hola" }
 };
 
 function setLang(lang, userName=""){
@@ -113,7 +113,6 @@ function setLang(lang, userName=""){
   const t = translations[lang];
   document.getElementById("title").innerText = t.title;
   document.getElementById("lbl-disponible").innerText = t.disponible;
-  document.getElementById("lbl-gains").innerText = t.gains;
   document.getElementById("lbl-retire").innerText = t.retire;
   document.getElementById("lbl-total").innerText = t.total;
   document.getElementById("btn-history").innerText = t.history;
@@ -125,53 +124,39 @@ function setLang(lang, userName=""){
   document.getElementById("menu-my-hotels").innerText = t.myHotels;
   document.getElementById("menu-my-residences").innerText = t.myResidences;
   document.getElementById("menu-profile").innerText = t.profile;
-  if(userName) document.getElementById("user-info").innerText = `${t.hello}, ${userName}`;
+  if(userName){
+    document.getElementById("user-info").innerText = `${t.hello}, ${userName}`;
+  }
 }
 
 const langBtn = document.querySelector(".lang-btn");
 const langMenu = document.getElementById("lang-menu");
-langBtn.addEventListener("click", ()=>{langMenu.style.display = langMenu.style.display==="block"?"none":"block";});
+langBtn.addEventListener("click", ()=> { langMenu.style.display = langMenu.style.display==="block" ? "none" : "block"; });
 langMenu.querySelectorAll("div").forEach(el=>{ el.addEventListener("click", ()=>{ const lang = el.dataset.lang; setLang(lang, currentUserName); langMenu.style.display="none"; }); });
 
 let currentUserName="";
-
-// Animation fluide
-function animateValue(id, start, end, duration=500){
-  let current = start;
-  const range = end - start;
-  const increment = range/(duration/30);
-  const obj = document.getElementById(id);
-  const timer = setInterval(()=>{
-    current += increment;
-    if((increment>0 && current>=end) || (increment<0 && current<=end)){
-      current=end; clearInterval(timer);
-    }
-    obj.innerText = `$${current.toFixed(2)}`;
-  },30);
-}
-
-// Auth & Firestore
 auth.onAuthStateChanged(user=>{
   if(user){
     document.body.style.display="block";
     currentUserName = user.displayName || user.email.split('@')[0];
-    setLang(localStorage.getItem("lang") || "fr", currentUserName);
+    const savedLang = localStorage.getItem("lang") || "fr";
+    setLang(savedLang, currentUserName);
 
     const userRef = db.collection("users").doc(user.uid);
-    userRef.onSnapshot(doc=>{
+    userRef.onSnapshot(async doc=>{
       if(doc.exists){
         const data = doc.data();
-        const available = data.balance ?? 0;
-        const gains = data.totalGains ?? 0;
-        const withdrawn = data.totalWithdrawn ?? 0;
-        const total = available + gains + withdrawn;
+        const available = data.wallet?.balance ?? 0;
+        const withdrawn = data.wallet?.totalWithdrawn ?? 0;
+        const total = data.wallet?.totalGains ?? 0;
+        document.getElementById("balance-available").innerText = `$${available.toFixed(2)}`;
+        document.getElementById("balance-withdrawn").innerText = `$${withdrawn.toFixed(2)}`;
+        document.getElementById("balance-total").innerText = `$${total.toFixed(2)}`;
 
-        animateValue("balance-available", parseFloat(document.getElementById("balance-available").innerText.replace('$','')), available);
-        animateValue("balance-gains", parseFloat(document.getElementById("balance-gains").innerText.replace('$','')), gains);
-        animateValue("balance-withdrawn", parseFloat(document.getElementById("balance-withdrawn").innerText.replace('$','')), withdrawn);
-        animateValue("balance-total", parseFloat(document.getElementById("balance-total").innerText.replace('$','')), total);
-
-        if(data.role==="Admis") document.getElementById("admin-menu").style.display="grid";
+        // Menu admin visible uniquement si role = "Admis"
+        if(data.role === "Admis"){
+          document.getElementById("admin-menu").style.display = "grid";
+        }
       }
     });
   } else {
