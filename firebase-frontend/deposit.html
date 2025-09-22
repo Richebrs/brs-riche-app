@@ -47,6 +47,8 @@ input[type="number"], input[type="text"], input[type="file"], input[type="email"
 </style>
 </head>
 <body>
+
+  
 <main>
 <header>
   <a class="back-btn" href="dashboard.html">← Retour</a>
@@ -95,7 +97,6 @@ input[type="number"], input[type="text"], input[type="file"], input[type="email"
   <div class="help" id="help-text">ℹ️ Cliquez sur "J'ai payé". Les faux dépôts seront suspendus.</div>
 </div>
 
-  
 <div class="card history">
   <h3 id="lbl-history">📜 Historique dépôts</h3>
   <div id="deposit-history"> <p class="no-data">Chargement...</p> </div>
@@ -104,6 +105,7 @@ input[type="number"], input[type="text"], input[type="file"], input[type="email"
 <a id="telegram-link" class="support" href="https://t.me/tonlien" target="_blank" title="Contacter le support">
 <i class="fab fa-telegram" style="font-size:22px"></i></a>
 
+        
 <script>
 /* --------- CONFIGURATION -------- */
 const ADDRESSES = {
@@ -339,5 +341,4 @@ auth.onAuthStateChanged(user=>{
 /* disable right click / copy / cut / paste */
 ['copy','cut','paste','contextmenu'].forEach(evt=>document.addEventListener(evt,e=>e.preventDefault()));
 </script>
-</body>
-</html>
+  
