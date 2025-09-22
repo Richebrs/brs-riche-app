@@ -97,20 +97,16 @@ input[type="number"], input[type="text"], input[type="file"], input[type="email"
     <option value="TRC20">USDT TRC20</option>
   </select>
 
-  <!-- Section adresse dépôt et copier -->
   <div class="deposit-address-container">
     <div class="deposit-address" id="deposit-address">ADRESSE_BEP20_HERE</div>
     <button class="copy-btn" id="copy-address-btn">📋 Copier</button>
   </div>
 
-  <label id="lbl-address">Adresse de dépôt utilisée</label>
-  <input id="user-address" type="text" placeholder="Adresse que vous avez utilisée" required>
-
   <label id="lbl-proof">Capture d’écran (optionnel)</label>
   <input id="screenshot" type="file" accept="image/*">
 
-  <label id="lbl-hash">Hash / ID de transaction</label>
-  <input id="tx-hash" type="text" placeholder="Collez ici le hash / ID (ex: 0x...)" required>
+  <label id="lbl-hash">Hash / ID de transaction ou votre adresse de portefeuille</label>
+  <input id="tx-hash" type="text" placeholder="Collez ici le hash / ID ou adresse" required>
 
   <div class="alert error" id="alert-error"></div>
   <div class="alert success" id="alert-success"></div>
@@ -127,7 +123,7 @@ input[type="number"], input[type="text"], input[type="file"], input[type="email"
 <a id="telegram-link" class="support" href="https://t.me/tonlien" target="_blank" title="Contacter le support">
 <i class="fab fa-telegram" style="font-size:22px"></i></a>
 
-    
+  
 <script>
 /* --------- CONFIGURATION -------- */
 const ADDRESSES = {
@@ -153,24 +149,21 @@ const storage = firebase.storage();
 /* Traductions */
 const T = {
   fr: { pageTitle:"💰 Dépôt", deposit:"Effectuer un Dépôt", amount:"Montant ($, min 5)", network:"Sélectionnez le réseau",
-        address:"Adresse de dépôt", proof:"Capture d’écran (optionnel)", hash:"Hash / ID de transaction",
-        submit:"✅ J'ai payé", help:"ℹ️ Cliquez sur \"J'ai payé\". Les faux dépôts seront suspendus.",
+        proof:"Capture d’écran (optionnel)", hash:"Hash / ID de transaction ou adresse", submit:"✅ J'ai payé",
+        help:"ℹ️ Cliquez sur \"J'ai payé\". Les faux dépôts seront suspendus.",
         invalidAmount:"Montant invalide — le minimum est 5$", missingHash:"Veuillez entrer le hash / ID",
-        invalidAddress:"Adresse invalide pour ce réseau", invalidTxAddr:"Adresse envoyée incorrecte",
         success:"✅ Demande envoyée. Votre dépôt sera vérifié.", noData:"Aucun dépôt trouvé.", emailRequired:"Veuillez entrer votre email"
   },
   en: { pageTitle:"💰 Deposit", deposit:"Make a Deposit", amount:"Amount ($, min 5)", network:"Select network",
-        address:"Deposit address", proof:"Screenshot (optional)", hash:"Transaction Hash / ID",
-        submit:"✅ I have paid", help:"ℹ️ Click 'I have paid'. Fake deposits may be suspended.",
+        proof:"Screenshot (optional)", hash:"Transaction Hash / ID or address", submit:"✅ I have paid",
+        help:"ℹ️ Click 'I have paid'. Fake deposits may be suspended.",
         invalidAmount:"Invalid amount — minimum is $5", missingHash:"Please enter transaction hash / ID",
-        invalidAddress:"Invalid address for this network", invalidTxAddr:"Entered address is incorrect",
         success:"✅ Request submitted. Your deposit will be reviewed.", noData:"No deposits found.", emailRequired:"Please enter your email"
   },
   es: { pageTitle:"💰 Depósito", deposit:"Hacer un Depósito", amount:"Monto ($, mín 5)", network:"Seleccione la red",
-        address:"Dirección de depósito", proof:"Captura (opcional)", hash:"Hash / ID de transacción",
-        submit:"✅ He pagado", help:"ℹ️ Haga clic en 'He pagado'. Los depósitos falsos serán suspendidos.",
+        proof:"Captura (opcional)", hash:"Hash / ID de transacción o dirección", submit:"✅ He pagado",
+        help:"ℹ️ Haga clic en 'He pagado'. Los depósitos falsos serán suspendidos.",
         invalidAmount:"Monto inválido — mínimo 5$", missingHash:"Por favor, ingrese hash / ID",
-        invalidAddress:"Dirección inválida para esta red", invalidTxAddr:"Dirección ingresada incorrecta",
         success:"✅ Solicitud enviada. Su depósito será revisado.", noData:"No se encontraron depósitos.", emailRequired:"Ingrese su email"
   }
 };
@@ -184,13 +177,11 @@ const el = {
   depositTitle: document.getElementById('deposit-title'),
   lblAmount: document.getElementById('lbl-amount'),
   lblNetwork: document.getElementById('lbl-network'),
-  lblAddress: document.getElementById('lbl-address'),
   lblProof: document.getElementById('lbl-proof'),
   lblHash: document.getElementById('lbl-hash'),
   lblEmail: document.getElementById('lbl-email'),
   amount: document.getElementById('amount'),
   network: document.getElementById('network'),
-  userAddress: document.getElementById('user-address'),
   depositAddress: document.getElementById('deposit-address'),
   copyBtn: document.getElementById('copy-address-btn'),
   screenshot: document.getElementById('screenshot'),
@@ -219,7 +210,6 @@ function applyTranslations(){
   el.depositTitle.innerText = t.deposit;
   el.lblAmount.innerText = t.amount;
   el.lblNetwork.innerText = t.network;
-  el.lblAddress.innerText = t.address;
   el.lblProof.innerText = t.proof;
   el.lblHash.innerText = t.hash;
   el.lblEmail.innerText = "Email";
@@ -243,13 +233,7 @@ el.copyBtn.addEventListener('click', ()=>{
 });
 
 /* validation */
-function isValidAddressForNetwork(addr, net){
-  if(!addr) return false;
-  if(net==='BEP20'){ return /^0x[a-fA-F0-9]{40}$/.test(addr); }
-  else if(net==='TRC20'){ return /^T[a-zA-Z0-9]{33,33}$/.test(addr); }
-  return false;
-}
-function isLikelyTxHash(hash){ return /^0x?[a-fA-F0-9]{64}$/.test(hash) || /^[a-fA-F0-9]{64}$/.test(hash); }
+function isLikelyTxHashOrAddress(hash){ return hash.length>=33; }
 
 /* messages */
 function showError(msg){ el.errorAlert.innerText=msg; el.errorAlert.style.display='block'; el.confirmAlert.style.display='none'; setTimeout(()=>{el.errorAlert.style.display='none'},8000); }
@@ -263,13 +247,11 @@ el.btnSubmit.addEventListener('click', async ()=>{
   const amount=parseFloat(el.amount.value);
   const net=el.network.value;
   const txHash=el.txHash.value.trim();
-  const userAddr=el.userAddress.value.trim();
   const email=el.email.value.trim();
 
   if(!email){ showError(t.emailRequired); return; }
   if(isNaN(amount)||amount<5){ showError(t.invalidAmount); return; }
-  if(!userAddr||!isValidAddressForNetwork(userAddr, net)){ showError(t.invalidTxAddr); return; }
-  if(!txHash||!isLikelyTxHash(txHash)){ showError(t.missingHash); return; }
+  if(!txHash||!isLikelyTxHashOrAddress(txHash)){ showError(t.missingHash); return; }
 
   let proofUrl = null;
   const file = el.screenshot.files[0];
@@ -281,12 +263,12 @@ el.btnSubmit.addEventListener('click', async ()=>{
   }
 
   try{
-    const docRef = await db.collection('deposits').add({
-      userId: currentUserId, amount, network:net, userAddress:userAddr, depositAddress:ADDRESSES[net],
+    await db.collection('deposits').add({
+      userId: currentUserId, amount, network:net, depositAddress:ADDRESSES[net],
       txHash, proofUrl, email, status:"En attente", createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     showSuccess(t.success);
-    el.amount.value=''; el.txHash.value=''; el.screenshot.value=''; el.userAddress.value=''; el.email.value='';
+    el.amount.value=''; el.txHash.value=''; el.screenshot.value=''; el.email.value='';
   }catch(err){ console.error(err); showError("Erreur serveur. Réessayez."); }
 });
 
@@ -304,8 +286,7 @@ function renderHistorySnapshot(snap){
     item.innerHTML=`
       <div><strong>Montant:</strong> $${d.amount}</div>
       <div><strong>Réseau:</strong> ${d.network}</div>
-      <div><strong>Adresse envoyée:</strong> ${d.userAddress||'-'}</div>
-      <div><strong>Hash:</strong> ${d.txHash||'-'}</div>
+      <div><strong>Hash / Adresse:</strong> ${d.txHash||'-'}</div>
       <div><strong>Status:</strong> <span class="${statusClass}">${d.status}</span></div>
       <div><small>${created}</small></div>
       <div><strong>Email:</strong> ${d.email||'-'}</div>
