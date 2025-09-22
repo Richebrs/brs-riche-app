@@ -67,9 +67,6 @@
       border-radius: 8px;
       font-size: 1em;
     }
-    input[type="file"] {
-      border: none;
-    }
     .address-box {
       background: #f1f1f1;
       padding: 10px;
@@ -78,6 +75,20 @@
       margin-bottom: 10px;
       text-align: center;
       font-weight: bold;
+      position: relative;
+    }
+    .copy-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #0d47a1;
+      color: #fff;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9em;
     }
     button {
       width: 100%;
@@ -94,25 +105,27 @@
     .btn-primary:hover { background: #08306b; }
     .btn-cancel { background: #e53935; color: #fff; }
     .btn-cancel:hover { background: #c62828; }
-    .telegram-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #0088cc;
-      color: #fff;
-      padding: 12px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-    .telegram-btn i { margin-right: 8px; }
     .message {
       text-align: center;
       margin: 15px 0;
       font-weight: bold;
-      color: green;
       display: none;
+    }
+    .warning {
+      color: red;
+      font-size: 0.9em;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    .help-text {
+      background: #fff3cd;
+      padding: 10px;
+      border: 1px solid #ffeeba;
+      border-radius: 8px;
+      margin-top: 15px;
+      font-size: 0.9em;
+      text-align: center;
+      color: #856404;
     }
     .history {
       margin-top: 20px;
@@ -125,8 +138,20 @@
       margin-bottom: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    .history-item p { margin: 5px 0; }
     .no-data { text-align: center; color: #999; margin-top: 15px; }
+    .support {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      background: #0088cc;
+      color: #fff;
+      padding: 12px;
+      border-radius: 50%;
+      font-size: 1.5em;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
   </style>
 </head>
 <body>
@@ -137,27 +162,35 @@
   <div class="container">
     <div class="form-box">
       <h2 id="deposit-title">Effectuer un Dépôt</h2>
+
+      <div class="warning" id="warning-msg">
+        ⚠️ Vérifiez bien le réseau avant d’envoyer vos USDT !  
+        Si vous déposez sur un mauvais réseau, vos fonds seront perdus.
+      </div>
+
       <label for="amount" id="lbl-amount">Montant ($, min 5)</label>
       <input type="number" id="amount" min="5" placeholder="Entrez le montant">
 
       <label for="network" id="lbl-network">Sélectionnez le réseau</label>
-      <select id="network">
+      <select id="network" onchange="updateAddress()">
         <option value="BEP20">USDT BEP20</option>
         <option value="TRC20">USDT TRC20</option>
       </select>
 
       <label id="lbl-address">Adresse de dépôt</label>
-      <div class="address-box" id="deposit-address">IciTonAdresseWallet</div>
-
-      <label id="lbl-proof">Capture d’écran</label>
-      <input type="file" id="screenshot">
+      <div class="address-box">
+        <span id="deposit-address">AdresseUSDT_BEP20</span>
+        <button class="copy-btn" onclick="copyAddress()">Copier</button>
+      </div>
 
       <label id="lbl-hash">Hash / ID de transaction</label>
       <input type="text" id="tx-hash" placeholder="Collez le hash de transaction">
 
-      <button class="btn-primary" onclick="sendDeposit()" id="btn-submit">✅ J’ai payé et envoyé</button>
-      <button class="btn-cancel" onclick="cancelDeposit()" id="btn-cancel">❌ Annuler</button>
-      <a href="https://t.me/tonlien" target="_blank" class="telegram-btn"><i class="fab fa-telegram"></i> Telegram Admin</a>
+      <button class="btn-primary" onclick="sendDeposit()" id="btn-submit">✅ J’ai payé</button>
+      <div class="help-text" id="help-text">
+        ℹ️ Si vous avez déjà effectué le dépôt, cliquez sur "J’ai payé".  
+        ❌ Les faux dépôts entraîneront une suspension définitive de votre compte.
+      </div>
 
       <div class="message" id="confirmation-msg">Votre demande sera validée sous peu...</div>
     </div>
@@ -167,6 +200,9 @@
       <div id="deposit-history"></div>
     </div>
   </div>
+
+  <!-- Service Client -->
+  <a href="https://t.me/tonlien" target="_blank" class="support"><i class="fab fa-telegram"></i></a>
 
   <script>
     document.addEventListener("copy", e => e.preventDefault());
@@ -185,10 +221,27 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    const addresses = {
+      BEP20: "AdresseUSDT_BEP20",
+      TRC20: "AdresseUSDT_TRC20"
+    };
+
+    function updateAddress(){
+      const net = document.getElementById("network").value;
+      document.getElementById("deposit-address").innerText = addresses[net];
+    }
+
+    function copyAddress(){
+      const addr = document.getElementById("deposit-address").innerText;
+      navigator.clipboard.writeText(addr).then(()=>{
+        alert("Adresse copiée !");
+      });
+    }
+
     const translations = {
-      fr: { title:"💰 Dépôt", deposit:"Effectuer un Dépôt", amount:"Montant ($, min 5)", network:"Sélectionnez le réseau", address:"Adresse de dépôt", proof:"Capture d’écran", hash:"Hash / ID de transaction", submit:"✅ J’ai payé et envoyé", cancel:"❌ Annuler", history:"📜 Historique Dépôts", msg:"Votre demande sera validée sous peu..." },
-      en: { title:"💰 Deposit", deposit:"Make a Deposit", amount:"Amount ($, min 5)", network:"Select network", address:"Deposit Address", proof:"Upload Screenshot", hash:"Transaction Hash / ID", submit:"✅ I have paid and sent", cancel:"❌ Cancel", history:"📜 Deposit History", msg:"Your request will be validated shortly..." },
-      es: { title:"💰 Depósito", deposit:"Hacer un Depósito", amount:"Monto ($, mín 5)", network:"Seleccione la red", address:"Dirección de Depósito", proof:"Captura de pantalla", hash:"Hash / ID de transacción", submit:"✅ He pagado y enviado", cancel:"❌ Cancelar", history:"📜 Historial Depósitos", msg:"Su solicitud será validada en breve..." }
+      fr: { title:"💰 Dépôt", deposit:"Effectuer un Dépôt", amount:"Montant ($, min 5)", network:"Sélectionnez le réseau", address:"Adresse de dépôt", hash:"Hash / ID de transaction", submit:"✅ J’ai payé", history:"📜 Historique Dépôts", msg:"Votre demande sera validée sous peu...", help:"ℹ️ Si vous avez déjà effectué le dépôt, cliquez sur 'J’ai payé'. ❌ Les faux dépôts entraîneront une suspension définitive de votre compte." },
+      en: { title:"💰 Deposit", deposit:"Make a Deposit", amount:"Amount ($, min 5)", network:"Select Network", address:"Deposit Address", hash:"Transaction Hash / ID", submit:"✅ I have paid", history:"📜 Deposit History", msg:"Your request will be validated shortly...", help:"ℹ️ If you already made the deposit, click 'I have paid'. ❌ Fake deposits will lead to permanent account suspension." },
+      es: { title:"💰 Depósito", deposit:"Hacer un Depósito", amount:"Monto ($, mín 5)", network:"Seleccione la Red", address:"Dirección de Depósito", hash:"Hash / ID de transacción", submit:"✅ He pagado", history:"📜 Historial Depósitos", msg:"Su solicitud será validada en breve...", help:"ℹ️ Si ya realizó el depósito, haga clic en 'He pagado'. ❌ Los depósitos falsos resultarán en suspensión permanente de la cuenta." }
     };
 
     function setLang(lang){
@@ -198,12 +251,11 @@
       document.getElementById("lbl-amount").innerText = t.amount;
       document.getElementById("lbl-network").innerText = t.network;
       document.getElementById("lbl-address").innerText = t.address;
-      document.getElementById("lbl-proof").innerText = t.proof;
       document.getElementById("lbl-hash").innerText = t.hash;
       document.getElementById("btn-submit").innerText = t.submit;
-      document.getElementById("btn-cancel").innerText = t.cancel;
       document.getElementById("lbl-history").innerText = t.history;
       document.getElementById("confirmation-msg").innerText = t.msg;
+      document.getElementById("help-text").innerText = t.help;
     }
 
     let currentUserId = null;
@@ -236,12 +288,6 @@
       document.getElementById("tx-hash").value = "";
     }
 
-    async function cancelDeposit(){
-      const q = await db.collection("deposits").where("userId","==",currentUserId).where("status","==","En attente").get();
-      q.forEach(async doc=>{ await doc.ref.update({ status:"Annulé" }); });
-      alert("Demande annulée");
-    }
-
     function loadHistory(){
       db.collection("deposits").where("userId","==",currentUserId).orderBy("createdAt","desc").onSnapshot(snap=>{
         const list = document.getElementById("deposit-history");
@@ -264,5 +310,6 @@
     }
   </script>
 </body>
-  </html>
-  
+</html>
+
+        
