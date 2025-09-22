@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -43,9 +44,8 @@ input[type="number"], input[type="text"], input[type="file"], input[type="email"
 .warning{ color:var(--danger); font-weight:700; margin-bottom:8px; text-align:center; }
 .help{ background:#fff3cd; color:#856404; padding:10px; border-radius:8px; border:1px solid #ffeeba; margin-top:12px; font-size:14px; text-align:center }
 
-.deposit-address-container{ display:flex; justify-content:center; align-items:center; margin:12px 0; gap:8px; flex-wrap:wrap; }
-.deposit-address{ background:#f0f0f0; padding:10px 14px; border-radius:8px; font-family:monospace; word-break:break-all; text-align:center; flex:1 1 auto; min-width:220px; }
-.copy-btn{ background:var(--primary); color:#fff; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; font-weight:600; }
+.deposit-address-container{ display:flex; justify-content:space-between; align-items:center; margin:8px 0; background:#f0f0f0; padding:10px; border-radius:8px; font-size:14px; }
+.copy-btn{ background:#0d47a1; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:13px; }
 
 .btn-primary{ background:var(--primary); color:#fff; border:none; padding:12px; border-radius:8px; width:100%; font-weight:700; cursor:pointer; margin-top:12px }
 .status-ok{ color:var(--ok); font-weight:700 }
@@ -97,12 +97,13 @@ input[type="number"], input[type="text"], input[type="file"], input[type="email"
     <option value="TRC20">USDT TRC20</option>
   </select>
 
+  <!-- Section adresse dépôt et copier -->
   <div class="deposit-address-container">
     <div class="deposit-address" id="deposit-address">ADRESSE_BEP20_HERE</div>
     <button class="copy-btn" id="copy-address-btn">📋 Copier</button>
   </div>
 
-  <label id="lbl-user-address">Adresse utilisée</label>
+  <label id="lbl-address">Adresse de dépôt utilisée</label>
   <input id="user-address" type="text" placeholder="Adresse que vous avez utilisée" required>
 
   <label id="lbl-proof">Capture d’écran (optionnel)</label>
@@ -122,34 +123,219 @@ input[type="number"], input[type="text"], input[type="file"], input[type="email"
   <h3 id="lbl-history">📜 Historique dépôts</h3>
   <div id="deposit-history"> <p class="no-data">Chargement...</p> </div>
 </div>
-</main>
 
 <a id="telegram-link" class="support" href="https://t.me/tonlien" target="_blank" title="Contacter le support">
 <i class="fab fa-telegram" style="font-size:22px"></i></a>
 
+    
 <script>
-// --------- CONFIGURATION --------
-const ADDRESSES = { BEP20: "ADRESSE_BEP20_HERE", TRC20: "ADRESSE_TRC20_HERE" };
+/* --------- CONFIGURATION -------- */
+const ADDRESSES = {
+  BEP20: "ADRESSE_BEP20_HERE",
+  TRC20: "ADRESSE_TRC20_HERE"
+};
 const TELEGRAM_ADMIN_LINK = "https://t.me/tonlien";
 
-/* DOM */
-const depositAddressEl = document.getElementById('deposit-address');
-const copyBtn = document.getElementById('copy-address-btn');
-const networkSelect = document.getElementById('network');
+/* Firebase config */
+const firebaseConfig = {
+  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+  authDomain: "brs-riche-2.firebaseapp.com",
+  projectId: "brs-riche-2",
+  storageBucket: "brs-riche-2.appspot.com",
+  messagingSenderId: "313874599780",
+  appId: "1:313874599780:web:xxxxxx"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+/* Traductions */
+const T = {
+  fr: { pageTitle:"💰 Dépôt", deposit:"Effectuer un Dépôt", amount:"Montant ($, min 5)", network:"Sélectionnez le réseau",
+        address:"Adresse de dépôt", proof:"Capture d’écran (optionnel)", hash:"Hash / ID de transaction",
+        submit:"✅ J'ai payé", help:"ℹ️ Cliquez sur \"J'ai payé\". Les faux dépôts seront suspendus.",
+        invalidAmount:"Montant invalide — le minimum est 5$", missingHash:"Veuillez entrer le hash / ID",
+        invalidAddress:"Adresse invalide pour ce réseau", invalidTxAddr:"Adresse envoyée incorrecte",
+        success:"✅ Demande envoyée. Votre dépôt sera vérifié.", noData:"Aucun dépôt trouvé.", emailRequired:"Veuillez entrer votre email"
+  },
+  en: { pageTitle:"💰 Deposit", deposit:"Make a Deposit", amount:"Amount ($, min 5)", network:"Select network",
+        address:"Deposit address", proof:"Screenshot (optional)", hash:"Transaction Hash / ID",
+        submit:"✅ I have paid", help:"ℹ️ Click 'I have paid'. Fake deposits may be suspended.",
+        invalidAmount:"Invalid amount — minimum is $5", missingHash:"Please enter transaction hash / ID",
+        invalidAddress:"Invalid address for this network", invalidTxAddr:"Entered address is incorrect",
+        success:"✅ Request submitted. Your deposit will be reviewed.", noData:"No deposits found.", emailRequired:"Please enter your email"
+  },
+  es: { pageTitle:"💰 Depósito", deposit:"Hacer un Depósito", amount:"Monto ($, mín 5)", network:"Seleccione la red",
+        address:"Dirección de depósito", proof:"Captura (opcional)", hash:"Hash / ID de transacción",
+        submit:"✅ He pagado", help:"ℹ️ Haga clic en 'He pagado'. Los depósitos falsos serán suspendidos.",
+        invalidAmount:"Monto inválido — mínimo 5$", missingHash:"Por favor, ingrese hash / ID",
+        invalidAddress:"Dirección inválida para esta red", invalidTxAddr:"Dirección ingresada incorrecta",
+        success:"✅ Solicitud enviada. Su depósito será revisado.", noData:"No se encontraron depósitos.", emailRequired:"Ingrese su email"
+  }
+};
+
+/* DOM elements */
+const el = {
+  body: document.body,
+  langBtn: document.getElementById('lang-btn'),
+  langMenu: document.getElementById('lang-menu'),
+  pageTitle: document.getElementById('page-title'),
+  depositTitle: document.getElementById('deposit-title'),
+  lblAmount: document.getElementById('lbl-amount'),
+  lblNetwork: document.getElementById('lbl-network'),
+  lblAddress: document.getElementById('lbl-address'),
+  lblProof: document.getElementById('lbl-proof'),
+  lblHash: document.getElementById('lbl-hash'),
+  lblEmail: document.getElementById('lbl-email'),
+  amount: document.getElementById('amount'),
+  network: document.getElementById('network'),
+  userAddress: document.getElementById('user-address'),
+  depositAddress: document.getElementById('deposit-address'),
+  copyBtn: document.getElementById('copy-address-btn'),
+  screenshot: document.getElementById('screenshot'),
+  txHash: document.getElementById('tx-hash'),
+  email: document.getElementById('email'),
+  btnSubmit: document.getElementById('btn-submit'),
+  helpText: document.getElementById('help-text'),
+  confirmAlert: document.getElementById('alert-success'),
+  errorAlert: document.getElementById('alert-error'),
+  depositHistory: document.getElementById('deposit-history'),
+  warningMsg: document.getElementById('warning-msg'),
+  telegram: document.getElementById('telegram-link')
+};
+
+/* Langue */
+let LANG = localStorage.getItem('lang') || 'fr';
+el.langBtn.addEventListener('click', ()=>{ el.langMenu.style.display = el.langMenu.style.display==='block'?'none':'block'; });
+el.langMenu.querySelectorAll('div').forEach(d=>{
+  d.addEventListener('click', ()=>{
+    LANG=d.dataset.lang; localStorage.setItem('lang', LANG); applyTranslations(); el.langMenu.style.display='none';
+  });
+});
+function applyTranslations(){
+  const t = T[LANG]||T.fr;
+  el.pageTitle.innerText = t.pageTitle;
+  el.depositTitle.innerText = t.deposit;
+  el.lblAmount.innerText = t.amount;
+  el.lblNetwork.innerText = t.network;
+  el.lblAddress.innerText = t.address;
+  el.lblProof.innerText = t.proof;
+  el.lblHash.innerText = t.hash;
+  el.lblEmail.innerText = "Email";
+  el.btnSubmit.innerText = t.submit;
+  el.helpText.innerText = t.help;
+}
+
+/* Changer adresse selon le réseau */
+function updateDepositAddress(){
+  const net = el.network.value;
+  el.depositAddress.innerText = ADDRESSES[net] || "Adresse indisponible";
+}
+el.network.addEventListener('change', updateDepositAddress);
+updateDepositAddress();
 
 /* Copier adresse */
-copyBtn.addEventListener('click', ()=>{
-  navigator.clipboard.writeText(depositAddressEl.innerText).then(()=>{
-    alert("Adresse copiée !");
-  }).catch(()=>alert("Impossible de copier."));
+el.copyBtn.addEventListener('click', ()=>{
+  navigator.clipboard.writeText(el.depositAddress.innerText)
+  .then(()=>alert("Adresse copiée !"))
+  .catch(()=>alert("Impossible de copier l'adresse."));
 });
 
-/* Changer adresse selon réseau */
-networkSelect.addEventListener('change', ()=>{
-  depositAddressEl.innerText = ADDRESSES[networkSelect.value];
+/* validation */
+function isValidAddressForNetwork(addr, net){
+  if(!addr) return false;
+  if(net==='BEP20'){ return /^0x[a-fA-F0-9]{40}$/.test(addr); }
+  else if(net==='TRC20'){ return /^T[a-zA-Z0-9]{33,33}$/.test(addr); }
+  return false;
+}
+function isLikelyTxHash(hash){ return /^0x?[a-fA-F0-9]{64}$/.test(hash) || /^[a-fA-F0-9]{64}$/.test(hash); }
+
+/* messages */
+function showError(msg){ el.errorAlert.innerText=msg; el.errorAlert.style.display='block'; el.confirmAlert.style.display='none'; setTimeout(()=>{el.errorAlert.style.display='none'},8000); }
+function showSuccess(msg){ el.confirmAlert.innerText=msg; el.confirmAlert.style.display='block'; el.errorAlert.style.display='none'; setTimeout(()=>{el.confirmAlert.style.display='none'},8000); }
+
+let currentUserId = null;
+
+/* envoyer dépôt */
+el.btnSubmit.addEventListener('click', async ()=>{
+  const t = T[LANG]||T.fr;
+  const amount=parseFloat(el.amount.value);
+  const net=el.network.value;
+  const txHash=el.txHash.value.trim();
+  const userAddr=el.userAddress.value.trim();
+  const email=el.email.value.trim();
+
+  if(!email){ showError(t.emailRequired); return; }
+  if(isNaN(amount)||amount<5){ showError(t.invalidAmount); return; }
+  if(!userAddr||!isValidAddressForNetwork(userAddr, net)){ showError(t.invalidTxAddr); return; }
+  if(!txHash||!isLikelyTxHash(txHash)){ showError(t.missingHash); return; }
+
+  let proofUrl = null;
+  const file = el.screenshot.files[0];
+  if(file){
+    const path = `deposits/${currentUserId}/${Date.now()}_${file.name}`;
+    const ref = storage.ref().child(path);
+    try{ const snap=await ref.put(file); proofUrl=await snap.ref.getDownloadURL(); }
+    catch(e){ showError("Erreur upload image. Réessayez."); return; }
+  }
+
+  try{
+    const docRef = await db.collection('deposits').add({
+      userId: currentUserId, amount, network:net, userAddress:userAddr, depositAddress:ADDRESSES[net],
+      txHash, proofUrl, email, status:"En attente", createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showSuccess(t.success);
+    el.amount.value=''; el.txHash.value=''; el.screenshot.value=''; el.userAddress.value=''; el.email.value='';
+  }catch(err){ console.error(err); showError("Erreur serveur. Réessayez."); }
 });
 
-/* Ici tu peux ajouter le reste de ton script Firebase, validation, upload et historique comme dans le code précédent */
+/* historique temps réel */
+function renderHistorySnapshot(snap){
+  const t = T[LANG]||T.fr;
+  const container=el.depositHistory;
+  container.innerHTML='';
+  if(snap.empty){ container.innerHTML=`<div class="no-data">${t.noData}</div>`; return; }
+  snap.forEach(doc=>{
+    const d=doc.data();
+    const created=d.createdAt?.toDate?d.createdAt.toDate().toLocaleString():"";
+    const item=document.createElement('div'); item.className='history-item';
+    const statusClass=(d.status||'').toLowerCase().includes('en attente')?'status-pending':(d.status||'').toLowerCase().includes('valide')?'status-ok':'';
+    item.innerHTML=`
+      <div><strong>Montant:</strong> $${d.amount}</div>
+      <div><strong>Réseau:</strong> ${d.network}</div>
+      <div><strong>Adresse envoyée:</strong> ${d.userAddress||'-'}</div>
+      <div><strong>Hash:</strong> ${d.txHash||'-'}</div>
+      <div><strong>Status:</strong> <span class="${statusClass}">${d.status}</span></div>
+      <div><small>${created}</small></div>
+      <div><strong>Email:</strong> ${d.email||'-'}</div>
+      ${d.proofUrl?`<div style="margin-top:8px"><a href="${d.proofUrl}" target="_blank">Voir preuve</a></div>`:''}
+      <button style="margin-top:6px; padding:6px 8px; border-radius:6px; border:none; background:#e53935; color:#fff; cursor:pointer" onclick="cancelDeposit('${doc.id}')">Annuler</button>
+    `;
+    container.appendChild(item);
+  });
+}
+
+/* annuler dépôt */
+window.cancelDeposit = async function(docId){
+  if(!confirm("Voulez-vous vraiment annuler ce dépôt ?")) return;
+  try{ await db.collection('deposits').doc(docId).delete(); showSuccess("Dépôt annulé."); }
+  catch(e){ console.error(e); showError("Impossible d'annuler."); }
+}
+
+/* auth */
+auth.onAuthStateChanged(user=>{
+  if(!user){ window.location.href='login.html'; return; }
+  currentUserId=user.uid;
+  el.body.style.opacity=1;
+  applyTranslations();
+  el.telegram.href=TELEGRAM_ADMIN_LINK;
+  db.collection('deposits').where('userId','==',currentUserId).orderBy('createdAt','desc').onSnapshot(renderHistorySnapshot);
+});
+
+/* disable right click / copy / cut / paste */
+['copy','cut','paste','contextmenu'].forEach(evt=>document.addEventListener(evt,e=>e.preventDefault()));
 </script>
 </body>
   </html>
+  
