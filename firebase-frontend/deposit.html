@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -92,7 +93,8 @@ input[type="number"], input[type="text"], input[type="file"], input[type="email"
 
   <button class="btn-primary" id="btn-submit">✅ J'ai payé</button>
   <div class="help" id="help-text">ℹ️ Cliquez sur "J'ai payé". Les faux dépôts seront suspendus.</div>
-      </div>
+</div>
+
   
 <div class="card history">
   <h3 id="lbl-history">📜 Historique dépôts</h3>
@@ -215,6 +217,7 @@ el.copyBtn.addEventListener('click', ()=>{
   .then(()=>alert("Adresse copiée !"))
   .catch(()=>alert("Impossible de copier l'adresse."));
 });
+
   
 /* validation */
 function isLikelyTxHashOrAddress(hash){ return hash.length>=33; }
@@ -269,7 +272,13 @@ el.btnSubmit.addEventListener('click', async ()=>{
       txHash, proofUrl, email, status: "En attente", createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     showSuccess(t.depositSent);
+    
+    /* Reset form */
     el.amount.value=''; el.txHash.value=''; el.screenshot.value=''; el.email.value='';
+
+    /* Recharger automatiquement la page après 1s */
+    setTimeout(()=>{ window.location.reload(); }, 1000);
+
   } catch(err){ 
     console.error(err); 
     showError("Erreur serveur. Réessayez."); 
@@ -332,4 +341,3 @@ auth.onAuthStateChanged(user=>{
 </script>
 </body>
 </html>
-
