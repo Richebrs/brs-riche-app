@@ -2,143 +2,134 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <title>Dépôt - BRS RICHE</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<meta charset="utf-8" />
+<title>Dépôt - BRS RICHE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
-  <!-- Firebase compat (auth, firestore, storage) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-  <style>
-    :root{--primary:#0d47a1;--danger:#e53935;--ok:#2e7d32}
-    *{box-sizing:border-box}
-    body{
-      font-family:"Segoe UI",system-ui,Arial,sans-serif;
-      margin:0; background:#f4f7fb; color:#222;
-      user-select:none; /* anti copy */
-      display:none;
-    }
-    header{
-      background:var(--primary); color:#fff; padding:14px 16px; position:relative;
-      display:flex; align-items:center; justify-content:center;
-    }
-    .back-btn{ position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#fff; cursor:pointer; font-weight:600; text-decoration:none }
-    .lang-dropdown{ position:absolute; right:12px; top:12px; }
-    .lang-btn{ background:transparent; border:none; color:#fff; cursor:pointer; font-size:18px }
-    .lang-menu{ display:none; position:absolute; right:0; top:36px; background:#fff; color:#222; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.15); overflow:hidden; min-width:120px; z-index:50 }
-    .lang-menu div{ padding:8px 12px; cursor:pointer }
-    .lang-menu div:hover{ background:#f0f0f0 }
-    main{ padding:18px; max-width:980px; margin:16px auto; }
+<style>
+:root{--primary:#0d47a1;--danger:#e53935;--ok:#2e7d32}
+*{box-sizing:border-box}
+body{
+  font-family:"Segoe UI",system-ui,Arial,sans-serif;
+  margin:0; background:#f4f7fb; color:#222;
+  user-select:none; opacity:0; transition:opacity 0.3s ease;
+  display:flex; justify-content:center; align-items:flex-start;
+  min-height:100vh;
+}
+header{
+  background:var(--primary); color:#fff; padding:14px 16px; position:relative;
+  display:flex; align-items:center; justify-content:center;
+  width:100%;
+}
+.back-btn{position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#fff; cursor:pointer; font-weight:600; text-decoration:none}
+.lang-dropdown{position:absolute; right:12px; top:12px;}
+.lang-btn{background:transparent; border:none; color:#fff; cursor:pointer; font-size:18px}
+.lang-menu{display:none; position:absolute; right:0; top:36px; background:#fff; color:#222; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.15); overflow:hidden; min-width:120px; z-index:50}
+.lang-menu div{padding:8px 12px; cursor:pointer}
+.lang-menu div:hover{background:#f0f0f0}
+main{padding:18px; max-width:480px; margin:16px auto; width:100%;}
 
-    .card{ background:#fff; padding:16px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.06); margin-bottom:16px }
-    .card h2{ margin:0 0 8px; color:var(--primary) }
-    label{ display:block; margin:10px 0 6px; font-weight:600 }
-    input[type="number"], input[type="text"], select, input[type="file"]{
-      width:100%; padding:10px; border-radius:8px; border:1px solid #dcdcdc; font-size:15px;
-    }
-    .address-box{
-      position:relative; background:#f1f1f1; padding:12px 110px 12px 12px; border-radius:8px; font-weight:700; word-break:break-all;
-    }
-    .copy-btn{ position:absolute; right:10px; top:50%; transform:translateY(-50%); background:var(--primary); border:none; color:#fff; padding:8px 10px; border-radius:8px; cursor:pointer }
-    .warning{ color:var(--danger); font-weight:700; margin-bottom:8px }
-    .help{ background:#fff3cd; color:#856404; padding:10px; border-radius:8px; border:1px solid #ffeeba; margin-top:12px; font-size:14px }
+.card{background:#fff; padding:16px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.06); margin-bottom:16px}
+.card h2{margin:0 0 8px; color:var(--primary); text-align:center;}
+label{display:block; margin:10px 0 6px; font-weight:600}
+input[type="number"], input[type="text"], input[type="file"], input[type="email"], select{
+  width:100%; padding:10px; border-radius:8px; border:1px solid #dcdcdc; font-size:15px;
+}
+.warning{ color:var(--danger); font-weight:700; margin-bottom:8px; text-align:center; }
+.help{ background:#fff3cd; color:#856404; padding:10px; border-radius:8px; border:1px solid #ffeeba; margin-top:12px; font-size:14px; text-align:center }
 
-    .btn-primary{ background:var(--primary); color:#fff; border:none; padding:12px; border-radius:8px; width:100%; font-weight:700; cursor:pointer; margin-top:12px }
-    .status-ok{ color:var(--ok); font-weight:700 }
-    .status-pending{ color:#b8860b; font-weight:700 }
-    .history h3{ margin-top:0; color:var(--primary) }
-    .history-item{ padding:12px; border-radius:8px; background:#fff; margin-bottom:10px; box-shadow:0 2px 8px rgba(0,0,0,0.06) }
-    .no-data{ color:#777; text-align:center; padding:12px }
+.btn-primary{ background:var(--primary); color:#fff; border:none; padding:12px; border-radius:8px; width:100%; font-weight:700; cursor:pointer; margin-top:12px }
+.status-ok{ color:var(--ok); font-weight:700 }
+.status-pending{ color:#b8860b; font-weight:700 }
+.history h3{ margin-top:0; color:var(--primary); text-align:center; }
+.history-item{ padding:12px; border-radius:8px; background:#fff; margin-bottom:10px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.no-data{ color:#777; text-align:center; padding:12px }
 
-    .support{
-      position:fixed; right:18px; bottom:18px; background:#0088cc; color:#fff; width:56px; height:56px; border-radius:50%;
-      display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(0,0,0,0.18); text-decoration:none
-    }
+.support{
+  position:fixed; right:18px; bottom:18px; background:#0088cc; color:#fff; width:56px; height:56px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(0,0,0,0.18); text-decoration:none
+}
 
-    .alert{
-      display:none; padding:10px; border-radius:8px; margin-top:12px; font-weight:700;
-    }
-    .alert.error{ background:#ffebee; color:#b71c1c; border:1px solid #ffcdd2 }
-    .alert.success{ background:#e8f5e9; color:#1b5e20; border:1px solid #c8e6c9 }
+.alert{ display:none; padding:10px; border-radius:8px; margin-top:12px; font-weight:700; text-align:center; }
+.alert.error{ background:#ffebee; color:#b71c1c; border:1px solid #ffcdd2 }
+.alert.success{ background:#e8f5e9; color:#1b5e20; border:1px solid #c8e6c9 }
 
-    @media (max-width:520px){
-      .address-box{ padding-right:100px }
-    }
-  </style>
+@media (max-width:520px){ body{padding:0 8px} }
+</style>
 </head>
 <body>
-  <header>
-    <a class="back-btn" href="dashboard.html">← Retour</a>
-    <div><strong id="page-title">💰 Dépôt</strong></div>
-
-    <div class="lang-dropdown">
-      <button class="lang-btn" id="lang-btn">🌐</button>
-      <div class="lang-menu" id="lang-menu">
-        <div data-lang="fr">🇫🇷 Français</div>
-        <div data-lang="en">🇬🇧 English</div>
-        <div data-lang="es">🇪🇸 Español</div>
-      </div>
+<main>
+<header>
+  <a class="back-btn" href="dashboard.html">← Retour</a>
+  <div><strong id="page-title">💰 Dépôt</strong></div>
+  <div class="lang-dropdown">
+    <button class="lang-btn" id="lang-btn">🌐</button>
+    <div class="lang-menu" id="lang-menu">
+      <div data-lang="fr">🇫🇷 Français</div>
+      <div data-lang="en">🇬🇧 English</div>
+      <div data-lang="es">🇪🇸 Español</div>
     </div>
-  </header>
+  </div>
+</header>
 
-  <main>
-    <div class="card">
-      <h2 id="deposit-title">Effectuer un Dépôt</h2>
+<div class="card">
+  <h2 id="deposit-title">Effectuer un Dépôt</h2>
+  <div class="warning" id="warning-msg">⚠️ Vérifiez le réseau avant d’envoyer vos USDT !</div>
 
-      <div class="warning" id="warning-msg">⚠️ Vérifiez bien le réseau avant d’envoyer vos USDT ! Si vous envoyez sur un mauvais réseau, vos fonds seront perdus.</div>
+  <label id="lbl-email">Email</label>
+  <input id="email" type="email" placeholder="Votre email" required>
 
-      <label id="lbl-amount">Montant ($, min 5)</label>
-      <input id="amount" type="number" min="5" placeholder="Entrez le montant (min 5$)">
+  <label id="lbl-amount">Montant ($, min 5)</label>
+  <input id="amount" type="number" min="5" placeholder="Entrez le montant (min 5$)" required>
 
-      <label id="lbl-network">Sélectionnez le réseau</label>
-      <select id="network">
-        <option value="BEP20">USDT BEP20</option>
-        <option value="TRC20">USDT TRC20</option>
-      </select>
+  <label id="lbl-network">Sélectionnez le réseau</label>
+  <select id="network">
+    <option value="BEP20">USDT BEP20</option>
+    <option value="TRC20">USDT TRC20</option>
+  </select>
 
-      <label id="lbl-address">Adresse de dépôt</label>
-      <div class="address-box" aria-live="polite" id="address-box">
-        <span id="deposit-address">ADRESSE_BEP20_ICI</span>
-        <button class="copy-btn" id="copyBtn" title="Copier l'adresse">Copier</button>
-      </div>
+  <label id="lbl-address">Adresse de dépôt utilisée</label>
+  <input id="user-address" type="text" placeholder="Adresse que vous avez utilisée" required>
 
-      <label id="lbl-proof">Capture d’écran (optionnel)</label>
-      <input id="screenshot" type="file" accept="image/*">
+  <label id="lbl-proof">Capture d’écran (optionnel)</label>
+  <input id="screenshot" type="file" accept="image/*">
 
-      <label id="lbl-hash">Hash / ID de transaction</label>
-      <input id="tx-hash" type="text" placeholder="Collez ici le hash / ID (ex: 0x...)">
+  <label id="lbl-hash">Hash / ID de transaction</label>
+  <input id="tx-hash" type="text" placeholder="Collez ici le hash / ID (ex: 0x...)" required>
 
-      <div class="alert error" id="alert-error"></div>
-      <div class="alert success" id="alert-success"></div>
+  <div class="alert error" id="alert-error"></div>
+  <div class="alert success" id="alert-success"></div>
 
-      <button class="btn-primary" id="btn-submit">✅ J'ai payé</button>
+  <button class="btn-primary" id="btn-submit">✅ J'ai payé</button>
+  <div class="help" id="help-text">ℹ️ Cliquez sur "J'ai payé". Les faux dépôts seront suspendus.</div>
+</div>
 
-      <div class="help" id="help-text">ℹ️ Si vous avez déjà effectué le dépôt, cliquez sur "J'ai payé". ❌ Les faux dépôts entraîneront la suspension définitive du compte.</div>
-    </div>
+<div class="card history">
+  <h3 id="lbl-history">📜 Historique dépôts</h3>
+  <div id="deposit-history"> <p class="no-data">Chargement...</p> </div>
+</div>
+</main>
 
-    <div class="card history">
-      <h3 id="lbl-history">📜 Historique dépôts</h3>
-      <div id="deposit-history"> <p class="no-data">Chargement...</p> </div>
-    </div>
-  </main>
+<a id="telegram-link" class="support" href="https://t.me/tonlien" target="_blank" title="Contacter le support">
+<i class="fab fa-telegram" style="font-size:22px"></i></a>
 
-  <!-- Support Telegram (remplace le lien par ton lien admin) -->
-  <a id="telegram-link" class="support" href="https://t.me/tonlien" target="_blank" title="Contacter le support"><i class="fab fa-telegram" style="font-size:22px"></i></a>
 
+  
 <script>
-/* --------- CONFIGURATION : remplace ces adresses + telegram link par les tiennes -------- */
+/* --------- CONFIGURATION -------- */
 const ADDRESSES = {
-  BEP20: "ADRESSE_BEP20_HERE",   // <-- remplace par ton adresse USDT BEP20
-  TRC20: "ADRESSE_TRC20_HERE"    // <-- remplace par ton adresse USDT TRC20
+  BEP20: "ADRESSE_BEP20_HERErolandffjfgkyggdtjjfdhj",
+  TRC20: "ADRESSE_TRC20_HEREgdtutrkkffhkkdszdgblaise"
 };
-const TELEGRAM_ADMIN_LINK = "https://t.me/tonlien"; // <-- remplace par ton lien
-/* --------------------------------------------------------------------------------------- */
+const TELEGRAM_ADMIN_LINK = "https://t.me/tonlien";
 
-/* Firebase config — remplace si besoin (gardez storageBucket si utilisé) */
+/* Firebase config */
 const firebaseConfig = {
   apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
   authDomain: "brs-riche-2.firebaseapp.com",
@@ -154,273 +145,160 @@ const storage = firebase.storage();
 
 /* Traductions */
 const T = {
-  fr: {
-    pageTitle:"💰 Dépôt",
-    deposit:"Effectuer un Dépôt",
-    amount:"Montant ($, min 5)",
-    network:"Sélectionnez le réseau",
-    address:"Adresse de dépôt",
-    proof:"Capture d’écran (optionnel)",
-    hash:"Hash / ID de transaction",
-    submit:"✅ J'ai payé",
-    help:"ℹ️ Si vous avez déjà effectué le dépôt, cliquez sur \"J'ai payé\". ❌ Les faux dépôts entraîneront la suspension définitive du compte.",
-    invalidAmount:"Montant invalide — le minimum est 5$",
-    missingHash:"Veuillez entrer le hash / ID de transaction",
-    invalidAddress:"L'adresse de dépôt configurée ne semble pas valide pour ce réseau. Contactez l'admin.",
-    invalidHash:"Hash invalide — vérifiez le hash saisi",
-    success:"✅ Demande envoyée. Votre dépôt sera vérifié et validé sous peu.",
-    noData:"Aucun dépôt trouvé."
+  fr: { pageTitle:"💰 Dépôt", deposit:"Effectuer un Dépôt", amount:"Montant ($, min 5)", network:"Sélectionnez le réseau",
+        address:"Adresse de dépôt", proof:"Capture d’écran (optionnel)", hash:"Hash / ID de transaction",
+        submit:"✅ J'ai payé", help:"ℹ️ Cliquez sur \"J'ai payé\". Les faux dépôts seront suspendus.",
+        invalidAmount:"Montant invalide — le minimum est 5$", missingHash:"Veuillez entrer le hash / ID",
+        invalidAddress:"Adresse invalide pour ce réseau", invalidTxAddr:"Adresse envoyée incorrecte",
+        success:"✅ Demande envoyée. Votre dépôt sera vérifié.", noData:"Aucun dépôt trouvé.", emailRequired:"Veuillez entrer votre email"
   },
-  en: {
-    pageTitle:"💰 Deposit",
-    deposit:"Make a Deposit",
-    amount:"Amount ($, min 5)",
-    network:"Select network",
-    address:"Deposit address",
-    proof:"Screenshot (optional)",
-    hash:"Transaction Hash / ID",
-    submit:"✅ I have paid",
-    help:"ℹ️ If you already made the deposit, click \"I have paid\". ❌ Fake deposits will lead to permanent account suspension.",
-    invalidAmount:"Invalid amount — minimum is $5",
-    missingHash:"Please enter the transaction hash / ID",
-    invalidAddress:"Deposit address configured seems invalid for this network. Contact admin.",
-    invalidHash:"Invalid hash — check the value",
-    success:"✅ Request submitted. Your deposit will be reviewed and validated shortly.",
-    noData:"No deposits found."
+  en: { pageTitle:"💰 Deposit", deposit:"Make a Deposit", amount:"Amount ($, min 5)", network:"Select network",
+        address:"Deposit address", proof:"Screenshot (optional)", hash:"Transaction Hash / ID",
+        submit:"✅ I have paid", help:"ℹ️ Click 'I have paid'. Fake deposits may be suspended.",
+        invalidAmount:"Invalid amount — minimum is $5", missingHash:"Please enter transaction hash / ID",
+        invalidAddress:"Invalid address for this network", invalidTxAddr:"Entered address is incorrect",
+        success:"✅ Request submitted. Your deposit will be reviewed.", noData:"No deposits found.", emailRequired:"Please enter your email"
   },
-  es: {
-    pageTitle:"💰 Depósito",
-    deposit:"Hacer un Depósito",
-    amount:"Monto ($, mín 5)",
-    network:"Seleccione la red",
-    address:"Dirección de depósito",
-    proof:"Captura (opcional)",
-    hash:"Hash / ID de transacción",
-    submit:"✅ He pagado",
-    help:"ℹ️ Si ya realizó el depósito, haga clic en \"He pagado\". ❌ Los depósitos falsos resultarán en suspensión permanente de la cuenta.",
-    invalidAmount:"Monto inválido — el mínimo es 5$",
-    missingHash:"Por favor, ingrese el hash / ID de la transacción",
-    invalidAddress:"La dirección configurada parece inválida para esta red. Contacte al admin.",
-    invalidHash:"Hash inválido — verifique el valor",
-    success:"✅ Solicitud enviada. Su depósito será revisado y validado en breve.",
-    noData:"No se encontraron depósitos."
+  es: { pageTitle:"💰 Depósito", deposit:"Hacer un Depósito", amount:"Monto ($, mín 5)", network:"Seleccione la red",
+        address:"Dirección de depósito", proof:"Captura (opcional)", hash:"Hash / ID de transacción",
+        submit:"✅ He pagado", help:"ℹ️ Haga clic en 'He pagado'. Los depósitos falsos serán suspendidos.",
+        invalidAmount:"Monto inválido — mínimo 5$", missingHash:"Por favor, ingrese hash / ID",
+        invalidAddress:"Dirección inválida para esta red", invalidTxAddr:"Dirección ingresada incorrecta",
+        success:"✅ Solicitud enviada. Su depósito será revisado.", noData:"No se encontraron depósitos.", emailRequired:"Ingrese su email"
   }
 };
 
-/* éléments DOM */
+/* DOM elements */
 const el = {
-  body: document.body,
-  langBtn: document.getElementById('lang-btn'),
-  langMenu: document.getElementById('lang-menu'),
-  pageTitle: document.getElementById('page-title'),
-  depositTitle: document.getElementById('deposit-title'),
-  lblAmount: document.getElementById('lbl-amount'),
-  lblNetwork: document.getElementById('lbl-network'),
-  lblAddress: document.getElementById('lbl-address'),
-  lblProof: document.getElementById('lbl-proof'),
-  lblHash: document.getElementById('lbl-hash'),
-  amount: document.getElementById('amount'),
-  network: document.getElementById('network'),
-  depositAddress: document.getElementById('deposit-address'),
-  copyBtn: document.getElementById('copyBtn'),
-  screenshot: document.getElementById('screenshot'),
-  txHash: document.getElementById('tx-hash'),
-  btnSubmit: document.getElementById('btn-submit'),
-  helpText: document.getElementById('help-text'),
-  confirmAlert: document.getElementById('alert-success'),
-  errorAlert: document.getElementById('alert-error'),
-  depositHistory: document.getElementById('deposit-history'),
-  warningMsg: document.getElementById('warning-msg'),
+  body: document.body, langBtn: document.getElementById('lang-btn'), langMenu: document.getElementById('lang-menu'),
+  pageTitle: document.getElementById('page-title'), depositTitle: document.getElementById('deposit-title'),
+  lblAmount: document.getElementById('lbl-amount'), lblNetwork: document.getElementById('lbl-network'),
+  lblAddress: document.getElementById('lbl-address'), lblProof: document.getElementById('lbl-proof'),
+  lblHash: document.getElementById('lbl-hash'), lblEmail: document.getElementById('lbl-email'),
+  amount: document.getElementById('amount'), network: document.getElementById('network'),
+  userAddress: document.getElementById('user-address'), depositAddress: null, copyBtn:null,
+  screenshot: document.getElementById('screenshot'), txHash: document.getElementById('tx-hash'),
+  email: document.getElementById('email'),
+  btnSubmit: document.getElementById('btn-submit'), helpText: document.getElementById('help-text'),
+  confirmAlert: document.getElementById('alert-success'), errorAlert: document.getElementById('alert-error'),
+  depositHistory: document.getElementById('deposit-history'), warningMsg: document.getElementById('warning-msg'),
   telegram: document.getElementById('telegram-link')
 };
 
-/* gestion langue */
 let LANG = localStorage.getItem('lang') || 'fr';
-function openLangMenu(){ el.langMenu.style.display = el.langMenu.style.display === 'block' ? 'none' : 'block'; }
+function openLangMenu(){ el.langMenu.style.display = el.langMenu.style.display==='block'?'none':'block'; }
 el.langBtn.addEventListener('click', openLangMenu);
 el.langMenu.querySelectorAll('div').forEach(d=>{
-  d.addEventListener('click', ()=>{ LANG = d.dataset.lang; localStorage.setItem('lang', LANG); applyTranslations(); el.langMenu.style.display='none'; });
+  d.addEventListener('click', ()=>{ LANG=d.dataset.lang; localStorage.setItem('lang', LANG); applyTranslations(); el.langMenu.style.display='none'; });
 });
 
 function applyTranslations(){
-  const t = T[LANG] || T.fr;
+  const t = T[LANG]||T.fr;
   el.pageTitle.innerText = t.pageTitle;
   el.depositTitle.innerText = t.deposit;
   el.lblAmount.innerText = t.amount;
   el.lblNetwork.innerText = t.network;
   el.lblAddress.innerText = t.address;
-  document.getElementById('lbl-proof').innerText = t.proof;
+  el.lblProof.innerText = t.proof;
   el.lblHash.innerText = t.hash;
+  el.lblEmail.innerText = "Email";
   el.btnSubmit.innerText = t.submit;
   el.helpText.innerText = t.help;
-  el.depositHistory.previousSibling && (/* keep header */ 0);
-  // update alerts if visible
 }
 
-/* update adresse selon réseau */
-function updateAddressDisplay(){
-  const net = el.network.value;
-  const addr = ADDRESSES[net] || "ADRESSE_NON_CONFIGURÉE";
-  el.depositAddress.innerText = addr;
-}
-
-/* copier adresse */
-el.copyBtn.addEventListener('click', async ()=>{
-  const text = el.depositAddress.innerText.trim();
-  try{
-    await navigator.clipboard.writeText(text);
-    showSuccess((T[LANG] || T.fr).success.replace('✅ ', 'Adresse copiée — '));
-  }catch(e){
-    showError("Impossible de copier (autorisation).");
-  }
-});
-
-/* messages */
-function showError(msg){
-  el.errorAlert.innerText = msg; el.errorAlert.style.display='block'; el.confirmAlert.style.display='none';
-  setTimeout(()=>{ el.errorAlert.style.display='none' }, 8000);
-}
-function showSuccess(msg){
-  el.confirmAlert.innerText = msg; el.confirmAlert.style.display='block'; el.errorAlert.style.display='none';
-  setTimeout(()=>{ el.confirmAlert.style.display='none' }, 8000);
-}
-
-/* validation d'adresse / hash */
+/* validation */
 function isValidAddressForNetwork(addr, net){
   if(!addr) return false;
-  if(net === 'BEP20'){
-    // ETH/BSC address : 0x + 40 hex
-    return /^0x[a-fA-F0-9]{40}$/.test(addr);
-  } else if(net === 'TRC20'){
-    // TRON typical Base58 starting with T and ~34 chars (simple check)
-    return /^T[a-zA-Z0-9]{33,33}$/.test(addr);
-  }
+  if(net==='BEP20'){ return /^0x[a-fA-F0-9]{40}$/.test(addr); }
+  else if(net==='TRC20'){ return /^T[a-zA-Z0-9]{33,33}$/.test(addr); }
   return false;
 }
-function isLikelyTxHash(hash){
-  if(!hash) return false;
-  return /^0x?[a-fA-F0-9]{64}$/.test(hash) || /^[a-fA-F0-9]{64}$/.test(hash);
-}
+function isLikelyTxHash(hash){ return /^0x?[a-fA-F0-9]{64}$/.test(hash) || /^[a-fA-F0-9]{64}$/.test(hash); }
 
-/* envoi */
+/* messages */
+function showError(msg){ el.errorAlert.innerText=msg; el.errorAlert.style.display='block'; el.confirmAlert.style.display='none'; setTimeout(()=>{el.errorAlert.style.display='none'},8000); }
+function showSuccess(msg){ el.confirmAlert.innerText=msg; el.confirmAlert.style.display='block'; el.errorAlert.style.display='none'; setTimeout(()=>{el.confirmAlert.style.display='none'},8000); }
+
 let currentUserId = null;
-el.btnSubmit.addEventListener('click', sendDeposit);
 
-async function sendDeposit(){
-  const t = T[LANG] || T.fr;
-  const amount = parseFloat(el.amount.value);
-  const net = el.network.value;
-  const txHash = el.txHash.value?.trim();
-  const addr = ADDRESSES[net];
+/* envoyer dépôt */
+el.btnSubmit.addEventListener('click', async ()=>{
+  const t = T[LANG]||T.fr;
+  const amount=parseFloat(el.amount.value);
+  const net=el.network.value;
+  const txHash=el.txHash.value.trim();
+  const userAddr=el.userAddress.value.trim();
+  const email=el.email.value.trim();
 
-  // validations
-  if(isNaN(amount) || amount < 5){ showError(t.invalidAmount); return; }
-  if(!txHash){ showError(t.missingHash); return; }
-  if(!isValidAddressForNetwork(addr, net)){ showError(t.invalidAddress); return; }
-  if(!isLikelyTxHash(txHash)){ showError(t.invalidHash); return; }
+  if(!email){ showError(t.emailRequired); return; }
+  if(isNaN(amount)||amount<5){ showError(t.invalidAmount); return; }
+  if(!userAddr||!isValidAddressForNetwork(userAddr, net)){ showError(t.invalidTxAddr); return; }
+  if(!txHash||!isLikelyTxHash(txHash)){ showError(t.missingHash); return; }
 
-  // upload screenshot si fourni
   let proofUrl = null;
   const file = el.screenshot.files[0];
   if(file){
     const path = `deposits/${currentUserId}/${Date.now()}_${file.name}`;
     const ref = storage.ref().child(path);
-    try{
-      const snap = await ref.put(file);
-      proofUrl = await snap.ref.getDownloadURL();
-    }catch(err){
-      console.error("Upload error", err);
-      showError("Erreur upload image. Réessayez.");
-      return;
-    }
+    try{ const snap=await ref.put(file); proofUrl=await snap.ref.getDownloadURL(); }
+    catch(e){ showError("Erreur upload image. Réessayez."); return; }
   }
 
-  // écriture Firestore
   try{
-    await db.collection('deposits').add({
-      userId: currentUserId,
-      amount: amount,
-      network: net,
-      depositAddress: addr,
-      txHash: txHash,
-      proofUrl: proofUrl || null,
-      status: "En attente",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    const docRef = await db.collection('deposits').add({
+      userId: currentUserId, amount, network:net, userAddress:userAddr, depositAddress:ADDRESSES[net],
+      txHash, proofUrl, email, status:"En attente", createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     showSuccess(t.success);
-    el.amount.value = '';
-    el.txHash.value = '';
-    el.screenshot.value = '';
-    // on laisse l'admin notifier via le bouton telegram (icone) si besoin
-  }catch(err){
-    console.error(err);
-    showError("Erreur serveur. Réessayez.");
-  }
-}
+    el.amount.value=''; el.txHash.value=''; el.screenshot.value=''; el.userAddress.value=''; el.email.value='';
+  }catch(err){ console.error(err); showError("Erreur serveur. Réessayez."); }
+});
 
 /* historique temps réel */
 function renderHistorySnapshot(snap){
-  const t = T[LANG] || T.fr;
-  const container = el.depositHistory;
-  container.innerHTML = '';
-  if(snap.empty){
-    container.innerHTML = `<div class="no-data">${t.noData}</div>`;
-    return;
-  }
+  const t = T[LANG]||T.fr;
+  const container=el.depositHistory;
+  container.innerHTML='';
+  if(snap.empty){ container.innerHTML=`<div class="no-data">${t.noData}</div>`; return; }
   snap.forEach(doc=>{
-    const d = doc.data();
-    const created = d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString() : "";
-    const item = document.createElement('div');
-    item.className = 'history-item';
-    const statusClass = (d.status||'').toLowerCase().includes('en attente') || (d.status||'').toLowerCase().includes('pending') ? 'status-pending' : (d.status||'').toLowerCase().includes('valide') || (d.status||'').toLowerCase().includes('approved') ? 'status-ok' : '';
-    item.innerHTML = `
+    const d=doc.data();
+    const created=d.createdAt?.toDate?d.createdAt.toDate().toLocaleString():"";
+    const item=document.createElement('div'); item.className='history-item';
+    const statusClass=(d.status||'').toLowerCase().includes('en attente')?'status-pending':(d.status||'').toLowerCase().includes('valide')?'status-ok':'';
+    item.innerHTML=`
       <div><strong>Montant:</strong> $${d.amount}</div>
       <div><strong>Réseau:</strong> ${d.network}</div>
-      <div><strong>Adresse:</strong> ${d.depositAddress || '-'}</div>
-      <div><strong>Hash:</strong> ${d.txHash || '-'}</div>
+      <div><strong>Adresse envoyée:</strong> ${d.userAddress||'-'}</div>
+      <div><strong>Hash:</strong> ${d.txHash||'-'}</div>
       <div><strong>Status:</strong> <span class="${statusClass}">${d.status}</span></div>
       <div><small>${created}</small></div>
-      ${d.proofUrl ? `<div style="margin-top:8px"><a href="${d.proofUrl}" target="_blank">Voir preuve</a></div>` : ''}
+      <div><strong>Email:</strong> ${d.email||'-'}</div>
+      ${d.proofUrl?`<div style="margin-top:8px"><a href="${d.proofUrl}" target="_blank">Voir preuve</a></div>`:''}
+      <button style="margin-top:6px; padding:6px 8px; border-radius:6px; border:none; background:#e53935; color:#fff; cursor:pointer" onclick="cancelDeposit('${doc.id}')">Annuler</button>
     `;
     container.appendChild(item);
   });
 }
 
-/* auth + initialisation */
+/* annuler dépôt */
+window.cancelDeposit = async function(docId){
+  if(!confirm("Voulez-vous vraiment annuler ce dépôt ?")) return;
+  try{ await db.collection('deposits').doc(docId).delete(); showSuccess("Dépôt annulé."); }
+  catch(e){ console.error(e); showError("Impossible d'annuler."); }
+}
+
+/* auth */
 auth.onAuthStateChanged(user=>{
-  if(!user){ window.location.href = 'login.html'; return; }
-  currentUserId = user.uid;
-  el.body.style.display = 'block';
-  // affichage adresse initiale
-  updateAddressDisplay();
-  // apply translations
+  if(!user){ window.location.href='login.html'; return; }
+  currentUserId=user.uid;
+  el.body.style.opacity=1;
   applyTranslations();
-  // set telegram link
-  document.getElementById('telegram-link').href = TELEGRAM_ADMIN_LINK;
-
-  // history listener
-  db.collection('deposits').where('userId','==',currentUserId).orderBy('createdAt','desc')
-    .onSnapshot(snap => { renderHistorySnapshot(snap) });
-
+  el.telegram.href=TELEGRAM_ADMIN_LINK;
+  db.collection('deposits').where('userId','==',currentUserId).orderBy('createdAt','desc').onSnapshot(renderHistorySnapshot);
 });
 
-/* events */
-el.network.addEventListener('change', updateAddressDisplay);
-
 /* disable right click / copy / cut / paste */
-document.addEventListener('copy', e => e.preventDefault());
-document.addEventListener('cut', e => e.preventDefault());
-document.addEventListener('contextmenu', e => e.preventDefault());
-document.addEventListener('paste', e => e.preventDefault());
-
-/* initial translations & address */
-(function init(){
-  // ensure deposit address shown according to stored lang & network
-  updateAddressDisplay();
-  applyTranslations();
-})();
+['copy','cut','paste','contextmenu'].forEach(evt=>document.addEventListener(evt,e=>e.preventDefault()));
 </script>
 </body>
 </html>
-
-      
