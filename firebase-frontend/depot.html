@@ -1,0 +1,268 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Dépôt - BRS RICHE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f7fb;
+      color: #333;
+      user-select: none;
+      display: none;
+    }
+    header {
+      background: #0d47a1;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+      position: relative;
+    }
+    header h1 { margin: 0; font-size: 1.4em; }
+    header .back-btn {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.4em;
+      cursor: pointer;
+      color: #fff;
+    }
+    .container {
+      padding: 20px;
+    }
+    .form-box {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      margin-bottom: 20px;
+    }
+    .form-box h2 {
+      margin-top: 0;
+      color: #0d47a1;
+      font-size: 1.2em;
+      text-align: center;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin: 12px 0 6px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1em;
+    }
+    input[type="file"] {
+      border: none;
+    }
+    .address-box {
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 6px;
+      word-break: break-all;
+      margin-bottom: 10px;
+      text-align: center;
+      font-weight: bold;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-primary { background: #0d47a1; color: #fff; }
+    .btn-primary:hover { background: #08306b; }
+    .btn-cancel { background: #e53935; color: #fff; }
+    .btn-cancel:hover { background: #c62828; }
+    .telegram-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0088cc;
+      color: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .telegram-btn i { margin-right: 8px; }
+    .message {
+      text-align: center;
+      margin: 15px 0;
+      font-weight: bold;
+      color: green;
+      display: none;
+    }
+    .history {
+      margin-top: 20px;
+    }
+    .history h3 { color: #0d47a1; }
+    .history-item {
+      background: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .history-item p { margin: 5px 0; }
+    .no-data { text-align: center; color: #999; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="back-btn" onclick="window.location.href='dashboard.html'"><i class="fas fa-arrow-left"></i></span>
+    <h1 id="page-title">💰 Dépôt</h1>
+  </header>
+  <div class="container">
+    <div class="form-box">
+      <h2 id="deposit-title">Effectuer un Dépôt</h2>
+      <label for="amount" id="lbl-amount">Montant ($, min 5)</label>
+      <input type="number" id="amount" min="5" placeholder="Entrez le montant">
+
+      <label for="network" id="lbl-network">Sélectionnez le réseau</label>
+      <select id="network">
+        <option value="BEP20">USDT BEP20</option>
+        <option value="TRC20">USDT TRC20</option>
+      </select>
+
+      <label id="lbl-address">Adresse de dépôt</label>
+      <div class="address-box" id="deposit-address">IciTonAdresseWallet</div>
+
+      <label id="lbl-proof">Capture d’écran</label>
+      <input type="file" id="screenshot">
+
+      <label id="lbl-hash">Hash / ID de transaction</label>
+      <input type="text" id="tx-hash" placeholder="Collez le hash de transaction">
+
+      <button class="btn-primary" onclick="sendDeposit()" id="btn-submit">✅ J’ai payé et envoyé</button>
+      <button class="btn-cancel" onclick="cancelDeposit()" id="btn-cancel">❌ Annuler</button>
+      <a href="https://t.me/tonlien" target="_blank" class="telegram-btn"><i class="fab fa-telegram"></i> Telegram Admin</a>
+
+      <div class="message" id="confirmation-msg">Votre demande sera validée sous peu...</div>
+    </div>
+
+    <div class="history">
+      <h3 id="lbl-history">📜 Historique Dépôts</h3>
+      <div id="deposit-history"></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("copy", e => e.preventDefault());
+    document.addEventListener("cut", e => e.preventDefault());
+    document.addEventListener("contextmenu", e => e.preventDefault());
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+      authDomain: "brs-riche-2.firebaseapp.com",
+      projectId: "brs-riche-2",
+      storageBucket: "brs-riche-2.appspot.com",
+      messagingSenderId: "313874599780",
+      appId: "1:313874599780:web:xxxxxx"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const translations = {
+      fr: { title:"💰 Dépôt", deposit:"Effectuer un Dépôt", amount:"Montant ($, min 5)", network:"Sélectionnez le réseau", address:"Adresse de dépôt", proof:"Capture d’écran", hash:"Hash / ID de transaction", submit:"✅ J’ai payé et envoyé", cancel:"❌ Annuler", history:"📜 Historique Dépôts", msg:"Votre demande sera validée sous peu..." },
+      en: { title:"💰 Deposit", deposit:"Make a Deposit", amount:"Amount ($, min 5)", network:"Select network", address:"Deposit Address", proof:"Upload Screenshot", hash:"Transaction Hash / ID", submit:"✅ I have paid and sent", cancel:"❌ Cancel", history:"📜 Deposit History", msg:"Your request will be validated shortly..." },
+      es: { title:"💰 Depósito", deposit:"Hacer un Depósito", amount:"Monto ($, mín 5)", network:"Seleccione la red", address:"Dirección de Depósito", proof:"Captura de pantalla", hash:"Hash / ID de transacción", submit:"✅ He pagado y enviado", cancel:"❌ Cancelar", history:"📜 Historial Depósitos", msg:"Su solicitud será validada en breve..." }
+    };
+
+    function setLang(lang){
+      const t = translations[lang];
+      document.getElementById("page-title").innerText = t.title;
+      document.getElementById("deposit-title").innerText = t.deposit;
+      document.getElementById("lbl-amount").innerText = t.amount;
+      document.getElementById("lbl-network").innerText = t.network;
+      document.getElementById("lbl-address").innerText = t.address;
+      document.getElementById("lbl-proof").innerText = t.proof;
+      document.getElementById("lbl-hash").innerText = t.hash;
+      document.getElementById("btn-submit").innerText = t.submit;
+      document.getElementById("btn-cancel").innerText = t.cancel;
+      document.getElementById("lbl-history").innerText = t.history;
+      document.getElementById("confirmation-msg").innerText = t.msg;
+    }
+
+    let currentUserId = null;
+    auth.onAuthStateChanged(user=>{
+      if(user){
+        document.body.style.display = "block";
+        currentUserId = user.uid;
+        loadHistory();
+        const lang = localStorage.getItem("lang") || "fr";
+        setLang(lang);
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    async function sendDeposit(){
+      const amount = parseFloat(document.getElementById("amount").value);
+      const network = document.getElementById("network").value;
+      const txHash = document.getElementById("tx-hash").value;
+      if(amount < 5){ alert("Montant minimum 5$"); return; }
+      if(!txHash){ alert("Veuillez entrer le hash de transaction"); return; }
+      await db.collection("deposits").add({
+        userId: currentUserId,
+        amount, network, txHash,
+        status:"En attente",
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById("confirmation-msg").style.display = "block";
+      document.getElementById("amount").value = "";
+      document.getElementById("tx-hash").value = "";
+    }
+
+    async function cancelDeposit(){
+      const q = await db.collection("deposits").where("userId","==",currentUserId).where("status","==","En attente").get();
+      q.forEach(async doc=>{ await doc.ref.update({ status:"Annulé" }); });
+      alert("Demande annulée");
+    }
+
+    function loadHistory(){
+      db.collection("deposits").where("userId","==",currentUserId).orderBy("createdAt","desc").onSnapshot(snap=>{
+        const list = document.getElementById("deposit-history");
+        list.innerHTML = "";
+        if(snap.empty){
+          list.innerHTML = `<p class="no-data">Aucun dépôt trouvé.</p>`;
+          return;
+        }
+        snap.forEach(doc=>{
+          const d = doc.data();
+          const item = document.createElement("div");
+          item.className = "history-item";
+          item.innerHTML = `<p><b>Montant:</b> $${d.amount}</p>
+                            <p><b>Réseau:</b> ${d.network}</p>
+                            <p><b>Status:</b> ${d.status}</p>
+                            <p><b>Date:</b> ${d.createdAt?.toDate().toLocaleString() || ""}</p>`;
+          list.appendChild(item);
+        });
+      });
+    }
+  </script>
+</body>
+  </html>
+  
