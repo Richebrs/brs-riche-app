@@ -2,29 +2,34 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Historique - BRS Riche</title>
+<title>Historique Général - BRS Riche</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4;}
 header {background:#222; color:#fff; padding:12px 16px; text-align:center; position:relative;}
 header h1 {margin:0; font-size:18px;}
 .back-btn {position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#fff; text-decoration:none; font-weight:600;}
-.container {padding:20px; max-width:480px; margin:0 auto;}
-.activity {background:#fff; margin-bottom:12px; padding:14px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1);}
-.activity strong {display:block; margin-bottom:6px; font-size:15px;}
-.activity span {display:block; font-size:14px; margin-bottom:2px;}
-.date {color:gray; font-size:13px;}
+.container {padding:15px; max-width:480px; margin:0 auto;}
+.activity {background:#fff; margin-bottom:10px; padding:12px; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,0.08); font-size:14px; word-wrap:break-word;}
+.activity strong {display:block; margin-bottom:4px; font-size:15px;}
+.activity span {display:block; margin-bottom:2px; font-size:13px; color:#555;}
 .status-ok {color:#2e7d32; font-weight:700;}
 .status-pending {color:#b8860b; font-weight:700;}
 .status-refused {color:#e53935; font-weight:700;}
+.type-label {font-size:12px; font-weight:600; color:#0d47a1; margin-bottom:4px;}
 .no-data {text-align:center; color:#777; padding:12px;}
+@media (max-width:520px){
+  .activity {font-size:13px; padding:10px;}
+  .activity strong {font-size:14px;}
+  .activity span {font-size:12px;}
+}
 </style>
 </head>
 <body>
 
 <header>
   <a href="dashboard.html" class="back-btn">← Retour</a>
-  <h1>📜 Historique des dépôts</h1>
+  <h1>📜 Historique Général</h1>
 </header>
 
 <div class="container" id="activity-list">
@@ -51,11 +56,11 @@ const db = firebase.firestore();
 const activityList = document.getElementById("activity-list");
 let currentUserId = null;
 
-// Render historique
+// Fonction pour afficher toutes les activités
 function renderActivities(docs){
   activityList.innerHTML = '';
   if(docs.length===0){
-    activityList.innerHTML = '<p class="no-data">Aucun dépôt trouvé.</p>';
+    activityList.innerHTML = '<p class="no-data">Aucune activité trouvée.</p>';
     return;
   }
 
@@ -64,25 +69,75 @@ function renderActivities(docs){
     const div = document.createElement('div');
     div.className='activity';
 
-    const statusLower = (data.status||'').toLowerCase();
-    const statusClass = statusLower==='en attente'?'status-pending':statusLower==='succès'?'status-ok':statusLower==='annulé'?'status-refused':'status-pending';
     const created = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleString() : '-';
+    let statusClass = 'status-pending';
 
-    div.innerHTML=`
-      <strong>💵 Dépôt #${doc.id}</strong>
-      <span>Montant : $${data.amount || '-'}</span>
-      <span>Réseau : ${data.network || '-'}</span>
-      <span class="${statusClass}">Statut : ${data.status || '-'}</span>
+    // Définir couleur statut si applicable
+    if(data.status){
+      const s = data.status.toLowerCase();
+      if(s==='succès' || s==='validé') statusClass='status-ok';
+      else if(s==='annulé' || s==='refusé') statusClass='status-refused';
+    }
+
+    // Choisir type et texte en fonction de l’événement
+    let typeLabel = '';
+    let contentHtml = '';
+    switch(data.type){
+      case 'deposit':
+        typeLabel = '💰 Dépôt';
+        contentHtml = `
+          <span>Montant : $${data.amount}</span>
+          <span>Réseau : ${data.network}</span>
+          <span class="${statusClass}">Statut : ${data.status || '-'}</span>
+        `;
+        break;
+      case 'withdraw':
+        typeLabel = '🏦 Retrait';
+        contentHtml = `
+          <span>Montant : $${data.amount}</span>
+          <span class="${statusClass}">Statut : ${data.status || '-'}</span>
+        `;
+        break;
+      case 'hotel':
+        typeLabel = '🏨 Réservation Hôtel/Résidence';
+        contentHtml = `
+          <span>Nom : ${data.hotelName || '-'}</span>
+          <span>Montant : $${data.amount || '-'}</span>
+        `;
+        break;
+      case 'referral':
+        typeLabel = '👥 Commission de parrainage';
+        contentHtml = `
+          <span>Parrain : ${data.referrer || '-'}</span>
+          <span>Montant : $${data.amount || '-'}</span>
+        `;
+        break;
+      case 'daily-income':
+        typeLabel = '💵 Revenu quotidien';
+        contentHtml = `
+          <span>Source : ${data.source || '-'}</span>
+          <span>Montant : $${data.amount || '-'}</span>
+        `;
+        break;
+      default:
+        typeLabel = 'ℹ️ Autre';
+        contentHtml = `<span>${data.description || '-'}</span>`;
+    }
+
+    div.innerHTML = `
+      <div class="type-label">${typeLabel}</div>
+      ${contentHtml}
       <span class="date">Date : ${created}</span>
     `;
+
     activityList.appendChild(div);
   });
 }
 
-// Charger dépôts
-function loadDeposits(){
+// Charger toutes les activités
+function loadActivities(){
   if(!currentUserId) return;
-  db.collection('deposits')
+  db.collection('activities') // Collection unique pour toutes les activités
     .where('userId','==',currentUserId)
     .orderBy('createdAt','desc')
     .get()
@@ -96,9 +151,10 @@ function loadDeposits(){
 auth.onAuthStateChanged(user=>{
   if(!user){ window.location.href='login.html'; return; }
   currentUserId = user.uid;
-  loadDeposits();
+  loadActivities();
 });
 </script>
 
 </body>
-</html>
+  </html>
+  
