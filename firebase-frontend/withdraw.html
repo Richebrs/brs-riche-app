@@ -5,18 +5,18 @@
 <title>Retrait | BRS Riche</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; }
-  header { background:#1976d2; color:white; padding:15px; text-align:center; font-size:20px; }
-  .container { padding:20px; max-width:500px; margin:auto; }
-  label { display:block; margin-top:10px; font-weight:bold; }
-  input, select { width:100%; padding:10px; margin-top:5px; border-radius:5px; border:1px solid #ccc; }
-  button { width:100%; padding:12px; margin-top:20px; border:none; border-radius:5px; background:#1976d2; color:white; font-size:16px; cursor:pointer; }
-  button:disabled { background:#aaa; cursor:not-allowed; }
-  .message { margin-top:15px; padding:10px; border-radius:5px; font-weight:bold; }
-  .success { background:#e8f5e9; color:#2e7d32; }
-  .error { background:#ffebee; color:#c62828; }
-  .info { background:#fff3e0; color:#ef6c00; }
-  .fees { font-size:14px; margin-top:5px; color:#555; }
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; }
+header { background:#1976d2; color:white; padding:15px; text-align:center; font-size:20px; }
+.container { padding:20px; max-width:500px; margin:auto; }
+label { display:block; margin-top:10px; font-weight:bold; }
+input, select { width:100%; padding:10px; margin-top:5px; border-radius:5px; border:1px solid #ccc; }
+button { width:100%; padding:12px; margin-top:20px; border:none; border-radius:5px; background:#1976d2; color:white; font-size:16px; cursor:pointer; }
+button:disabled { background:#aaa; cursor:not-allowed; }
+.message { margin-top:15px; padding:10px; border-radius:5px; font-weight:bold; }
+.success { background:#e8f5e9; color:#2e7d32; }
+.error { background:#ffebee; color:#c62828; }
+.info { background:#fff3e0; color:#ef6c00; }
+.fees { font-size:14px; margin-top:5px; color:#555; }
 </style>
 </head>
 <body>
@@ -45,9 +45,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
 <script>
-// --- Config Firebase ---
 const firebaseConfig = {
   apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
   authDomain: "brs-riche-2.firebaseapp.com",
@@ -67,94 +65,74 @@ const networkSelect = document.getElementById("network");
 const messageBox = document.getElementById("message");
 const feesInfo = document.getElementById("fees-info");
 
-function showMessage(text, type="info"){
-  messageBox.innerText = text;
-  messageBox.className = "message " + type;
-  messageBox.style.display = "block";
+function showMessage(text,type="info"){
+  messageBox.innerText=text;
+  messageBox.className="message "+type;
+  messageBox.style.display="block";
 }
 
-// --- Calcul des frais dynamiques ---
+// calcul dynamique des frais
 amountInput.addEventListener("input", ()=>{
-  const amount = parseFloat(amountInput.value);
-  if(isNaN(amount) || amount < 3){
-    feesInfo.innerText = "👉 Le minimum est 3 USDT. Frais : 1 USDT + 5%.";
+  const amount=parseFloat(amountInput.value);
+  if(isNaN(amount)||amount<3){
+    feesInfo.innerText="👉 Le minimum est 3 USDT. Frais : 1 USDT + 5%.";
   } else {
-    const fees = 1 + (amount * 0.05);
-    const net = amount - fees;
-    feesInfo.innerText = `Frais appliqués : 1 USDT + 5% = ${fees.toFixed(2)} USDT → Vous recevrez environ ${net.toFixed(2)} USDT.`;
+    const fees=1+(amount*0.05);
+    const net=amount-fees;
+    feesInfo.innerText=`Frais appliqués : 1 USDT + 5% = ${fees.toFixed(2)} USDT → Vous recevrez environ ${net.toFixed(2)} USDT.`;
   }
 });
 
-// --- Action de retrait ---
 withdrawBtn.addEventListener("click", async ()=>{
-  const amount = parseFloat(amountInput.value);
-  const network = networkSelect.value;
-  const address = addressInput.value.trim();
+  const amount=parseFloat(amountInput.value);
+  const network=networkSelect.value;
+  const address=addressInput.value.trim();
+  if(isNaN(amount)||amount<3){ showMessage("❌ Le montant minimum de retrait est 3 USDT.","error"); return; }
+  if(address.length<10){ showMessage("❌ Veuillez entrer une adresse valide.","error"); return; }
 
-  if(isNaN(amount) || amount < 3){
-    showMessage("❌ Le montant minimum de retrait est 3 USDT.", "error");
-    return;
-  }
-  if(address.length < 10){
-    showMessage("❌ Veuillez entrer une adresse valide.", "error");
-    return;
-  }
+  const fees=1+(amount*0.05);
+  const netAmount=amount-fees;
 
-  const fees = 1 + (amount * 0.05);
-  const netAmount = amount - fees;
+  try{
+    const user=auth.currentUser;
+    if(!user){ showMessage("❌ Vous devez être connecté.","error"); return; }
+    const userRef=db.collection("users").doc(user.uid);
+    const userDoc=await userRef.get();
+    if(!userDoc.exists){ showMessage("❌ Profil utilisateur introuvable.","error"); return; }
 
-  try {
-    const user = auth.currentUser;
-    if(!user){
-      showMessage("❌ Vous devez être connecté.", "error");
+    const userData=userDoc.data();
+    const balance=userData.wallet?.balance||0;
+
+    if(balance<amount){
+      showMessage(`❌ Solde insuffisant. Votre solde est de ${balance} USDT.`,"error");
       return;
     }
 
-    const userRef = db.collection("users").doc(user.uid);
-    const userDoc = await userRef.get();
+    // Déduction automatique
+    await userRef.update({ "wallet.balance": balance - amount });
 
-    if(!userDoc.exists){
-      showMessage("❌ Profil utilisateur introuvable.", "error");
-      return;
-    }
-
-    const userData = userDoc.data();
-    const balance = userData.gains || 0;
-
-    if(balance < amount){
-      showMessage("❌ Solde insuffisant. Votre solde est de " + balance + " USDT.", "error");
-      return;
-    }
-
-    // Déduire du solde
-    await userRef.update({
-      gains: balance - amount
-    });
-
-    // Enregistrer la demande de retrait
+    // créer la demande de retrait
     await db.collection("withdrawals").add({
-      userId: user.uid,
-      email: userData.email || "",
-      amount: amount,
-      fees: fees,
-      netAmount: netAmount,
-      network: network,
-      address: address,
-      status: "En attente",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      userId:user.uid,
+      email:userData.email||"",
+      amount:amount,
+      fees:fees,
+      netAmount:netAmount,
+      network:network,
+      address:address,
+      status:"En attente",
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    showMessage(`✅ Demande envoyée avec succès !\nMontant demandé : ${amount} USDT\nFrais : ${fees.toFixed(2)} USDT\nNet reçu : ${netAmount.toFixed(2)} USDT\nStatut : En attente de validation.`, "success");
+    showMessage(`✅ Retrait demandé avec succès !\nMontant: ${amount} USDT\nFrais: ${fees.toFixed(2)} USDT\nNet: ${netAmount.toFixed(2)} USDT\nStatut: En attente`, "success");
 
-    amountInput.value = "";
-    addressInput.value = "";
-    feesInfo.innerText = "👉 Le minimum est 3 USDT. Frais : 1 USDT + 5%.";
-  } catch (err){
+    amountInput.value=""; addressInput.value="";
+    feesInfo.innerText="👉 Le minimum est 3 USDT. Frais : 1 USDT + 5%.";
+  } catch(err){
     console.error(err);
-    showMessage("❌ Erreur lors du retrait. Réessayez.", "error");
+    showMessage("❌ Erreur lors du retrait. Réessayez.","error");
   }
 });
 </script>
 </body>
-                                                                                       </html>
-  
+</html>
