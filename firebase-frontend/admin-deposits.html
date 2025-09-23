@@ -28,15 +28,14 @@ header { background:#1976d2; color:white; padding:15px; text-align:center; font-
 
 <div class="container">
   <div class="filter">
-    <label for="statusFilter">Filtrer :</label>
+    <label for="statusFilter">Filtrer par statut :</label>
     <select id="statusFilter">
       <option value="all">Tous</option>
       <option value="En attente">En attente</option>
-      <option value="Succès">Acceptés</option>
-      <option value="Annulé">Refusés</option>
+      <option value="Succès">Succès</option>
+      <option value="Annulé">Annulé</option>
     </select>
   </div>
-
   <div id="deposits-container">
     <p>Chargement des dépôts...</p>
   </div>
@@ -48,7 +47,7 @@ header { background:#1976d2; color:white; padding:15px; text-align:center; font-
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-/* --- Config Firebase identique utilisateur --- */
+// --- Config Firebase identique utilisateur ---
 const firebaseConfig = {
   apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
   authDomain: "brs-riche-2.firebaseapp.com",
@@ -63,7 +62,6 @@ const db = firebase.firestore();
 const depositsContainer = document.getElementById("deposits-container");
 const statusFilter = document.getElementById("statusFilter");
 const notifSound = document.getElementById("notif-sound");
-
 let currentFilter = "all";
 let seenIds = new Set();
 
@@ -80,7 +78,7 @@ function renderDeposits(docs){
   });
 
   if(filtered.length === 0){
-    depositsContainer.innerHTML = "<p>Aucune demande trouvée.</p>";
+    depositsContainer.innerHTML = "<p>Aucun dépôt trouvé.</p>";
     return;
   }
 
@@ -93,20 +91,23 @@ function renderDeposits(docs){
                         data.status === "Succès" ? "approved" :
                         data.status === "Annulé" ? "refused" : "";
 
+    let createdAt = "-";
+    if(data.createdAt?.toDate) createdAt = data.createdAt.toDate().toLocaleString();
+    else if(data.createdAt) createdAt = data.createdAt;
+
     card.innerHTML = `
       <h3>👤 ${data.email || "Utilisateur inconnu"}</h3>
-      <p>💵 Montant : <b>${data.amount}$</b></p>
+      <p>💵 Montant : <b>${data.amount || "-"}</b></p>
       <p>🌐 Réseau : ${data.network || "-"}</p>
-      <p>🏦 Adresse dépôt : ${data.depositAddress || "-"} <button class="copy-btn" onclick="copyText('${data.depositAddress}')">Copier</button></p>
-      <p>🔗 Hash / ID : ${data.txHash || "-"} <button class="copy-btn" onclick="copyText('${data.txHash}')">Copier</button></p>
-      <p>📅 Date : ${data.createdAt?.toDate().toLocaleString() || "-"}</p>
-      <p class="status ${statusClass}">Statut : ${data.status}</p>
+      <p>🏦 Adresse dépôt : ${data.depositAddress || "-"} <button class="copy-btn" onclick="copyText('${data.depositAddress || ""}')">Copier</button></p>
+      <p>🔗 Hash / ID : ${data.txHash || "-"} <button class="copy-btn" onclick="copyText('${data.txHash || ""}')">Copier</button></p>
+      <p>📅 Date : ${createdAt}</p>
+      <p class="status ${statusClass}">Statut : ${data.status || "Inconnu"}</p>
       <div class="actions">
         <button class="btn btn-accept" onclick="updateStatus('${doc.id}','Succès')">✅ Accepter</button>
         <button class="btn btn-refuse" onclick="updateStatus('${doc.id}','Annulé')">❌ Refuser</button>
       </div>
     `;
-
     depositsContainer.appendChild(card);
 
     if(!seenIds.has(doc.id) && data.status === "En attente"){
@@ -116,12 +117,12 @@ function renderDeposits(docs){
   });
 }
 
-/* Écoute Firestore temps réel */
+// --- Écoute Firestore temps réel ---
 db.collection("deposits").orderBy("createdAt","desc").onSnapshot(snapshot=>{
   renderDeposits(snapshot.docs);
 });
 
-/* Filtre statut */
+// --- Filtre statut ---
 statusFilter.addEventListener("change", e=>{
   currentFilter = e.target.value;
   db.collection("deposits").orderBy("createdAt","desc").get().then(snapshot=>{
@@ -129,7 +130,7 @@ statusFilter.addEventListener("change", e=>{
   });
 });
 
-/* Mettre à jour le statut */
+// --- Mettre à jour le statut ---
 function updateStatus(docId,status){
   db.collection("deposits").doc(docId).update({ status }).then(()=>{
     alert("Le dépôt a été " + (status==="Succès" ? "accepté ✅" : "refusé ❌"));
@@ -140,5 +141,5 @@ function updateStatus(docId,status){
 }
 </script>
 </body>
-  </html>
+    </html>
   
