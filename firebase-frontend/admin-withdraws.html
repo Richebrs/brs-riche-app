@@ -3,69 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin - Retraits</title>
+<title>BRS Riche - Admin Retraits</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #f0f4f8;
-    margin: 0;
-    padding: 20px;
-  }
-  h2 { text-align: center; color: #2c3e50; }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    background: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  th, td {
-    padding: 12px;
-    border-bottom: 1px solid #ddd;
-    text-align: center;
-  }
-  th {
-    background-color: #2980b9;
-    color: white;
-  }
-  tr:hover { background-color: #f1f1f1; }
-  button {
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    margin: 2px;
-  }
-  .approve { background: #27ae60; color: white; }
-  .reject { background: #e74c3c; color: white; }
-  .message { text-align: center; margin-top: 15px; font-weight: bold; }
-  .success { color: #27ae60; }
-  .error { color: #e74c3c; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+  h2 { text-align: center; color: #333; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  th, td { padding: 12px; border: 1px solid #ccc; text-align: center; }
+  th { background: #4caf50; color: #fff; }
+  tr:nth-child(even) { background: #f9f9f9; }
+  button { padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; margin: 2px; }
+  .approve { background: #4caf50; color: #fff; }
+  .reject { background: #f44336; color: #fff; }
+  .success { color: green; font-weight: bold; margin-top: 10px; text-align: center; }
+  .error { color: red; font-weight: bold; margin-top: 10px; text-align: center; }
 </style>
 </head>
 <body>
 
-<h2>💼 Administration des Retraits</h2>
-<div class="message" id="message"></div>
-
-<table>
+<h2>🛠️ Tableau de Retraits - Admin</h2>
+<p id="message"></p>
+<table id="withdrawTable">
   <thead>
     <tr>
       <th>Utilisateur</th>
-      <th>Solde</th>
-      <th>Gains totaux</th>
-      <th>Déjà retiré</th>
       <th>Montant</th>
-      <th>Frais (5%)</th>
+      <th>Frais</th>
       <th>Net</th>
       <th>Réseau</th>
       <th>Adresse</th>
-      <th>Actions</th>
+      <th>Statut</th>
+      <th>Date</th>
+      <th>Action</th>
     </tr>
   </thead>
-  <tbody id="withdrawalsTable">
-    <!-- Les retraits seront injectés ici -->
+  <tbody>
+    <!-- Retraits seront ajoutés ici -->
   </tbody>
 </table>
 
@@ -75,90 +47,70 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
-    authDomain: "brs-riche-2.firebaseapp.com",
-    projectId: "brs-riche-2",
-    storageBucket: "brs-riche-2.appspot.com",
-    messagingSenderId: "313874599780",
-    appId: "1:313874599780:web:xxxxxx"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+  authDomain: "brs-riche-2.firebaseapp.com",
+  projectId: "brs-riche-2",
+  storageBucket: "brs-riche-2.appspot.com",
+  messagingSenderId: "313874599780",
+  appId: "1:313874599780:web:xxxxxx"
+};
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-  const withdrawalsTable = document.getElementById("withdrawalsTable");
-  const messageDiv = document.getElementById("message");
-
-  // Vérification admin
-  auth.onAuthStateChanged(async (user) => {
-    if (!user) {
-      messageDiv.innerHTML = "<span class='error'>⚠ Veuillez vous connecter</span>";
-      return;
-    }
-    const doc = await db.collection("users").doc(user.uid).get();
-    if (!doc.exists || doc.data().role !== "admin") {
-      messageDiv.innerHTML = "<span class='error'>❌ Accès refusé : vous n'êtes pas admin</span>";
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    // Vérifier si c'est un admin
+    const userDoc = await db.collection("users").doc(user.uid).get();
+    if (!userDoc.exists || userDoc.data().role !== "Admis") {
+      document.getElementById("message").innerHTML = "<span class='error'>⚠ Accès refusé : Vous n'êtes pas admin</span>";
       return;
     }
     loadWithdrawals();
-  });
+  } else {
+    document.getElementById("message").innerHTML = "<span class='error'>⚠ Veuillez vous connecter</span>";
+  }
+});
 
-  async function loadWithdrawals() {
-    withdrawalsTable.innerHTML = "";
-    const snapshot = await db.collection("withdrawals").orderBy("createdAt", "desc").get();
+function loadWithdrawals() {
+  db.collection("withdrawals").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+    const tbody = document.getElementById("withdrawTable").querySelector("tbody");
+    tbody.innerHTML = "";
     snapshot.forEach(doc => {
-      const w = doc.data();
-      if (w.status === "pending") {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${w.username}</td>
-          <td>${w.balance || 0}</td>
-          <td>${w.totalGains || 0}</td>
-          <td>${w.totalWithdrawn || 0}</td>
-          <td>${w.amount}</td>
-          <td>${w.fees.toFixed(2)}</td>
-          <td>${w.net.toFixed(2)}</td>
-          <td>${w.network}</td>
-          <td>${w.wallet}</td>
-          <td>
-            <button class="approve" onclick="updateStatus('${doc.id}', 'approved')">✅ Approuver</button>
-            <button class="reject" onclick="updateStatus('${doc.id}', 'rejected')">❌ Refuser</button>
-          </td>
-        `;
-        withdrawalsTable.appendChild(row);
-      }
+      const data = doc.data();
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${data.username || ""}</td>
+        <td>${data.amount.toFixed(2)}</td>
+        <td>${data.fees.toFixed(2)}</td>
+        <td>${data.net.toFixed(2)}</td>
+        <td>${data.network}</td>
+        <td>${data.wallet}</td>
+        <td>${data.status}</td>
+        <td>${data.createdAt ? data.createdAt.toDate().toLocaleString() : ""}</td>
+        <td>
+          ${data.status === "pending" ? `<button class="approve" onclick="updateStatus('${doc.id}','approved')">✅ Approuver</button>
+          <button class="reject" onclick="updateStatus('${doc.id}','rejected')">❌ Rejeter</button>` : ""}
+        </td>
+      `;
+      tbody.appendChild(tr);
     });
-  }
+  });
+}
 
-  async function updateStatus(id, status) {
-    try {
-      const docRef = db.collection("withdrawals").doc(id);
-      const withdrawal = await docRef.get();
-      if (!withdrawal.exists) return;
-      const data = withdrawal.data();
-      const userRef = db.collection("users").doc(data.userId);
-      const userDoc = await userRef.get();
-      if (!userDoc.exists) return;
-
-      if (status === "approved") {
-        await docRef.update({status: "approved"});
-      } else if (status === "rejected") {
-        // Rembourse le solde si rejet
-        await userRef.update({
-          balance: userDoc.data().balance + data.amount
-        });
-        await docRef.update({status: "rejected"});
-      }
-      messageDiv.innerHTML = `<span class='success'>Mise à jour réussie</span>`;
-      loadWithdrawals();
-    } catch (err) {
-      messageDiv.innerHTML = `<span class='error'>Erreur: ${err.message}</span>`;
-    }
+async function updateStatus(docId, status) {
+  try {
+    await db.collection("withdrawals").doc(docId).update({ status: status });
+    document.getElementById("message").innerHTML = `<span class='success'>✅ Statut mis à jour avec succès</span>`;
+  } catch (err) {
+    console.error(err);
+    document.getElementById("message").innerHTML = `<span class='error'>⚠ Erreur lors de la mise à jour</span>`;
   }
+}
 </script>
 
 </body>
   </html>
-  
+                   
