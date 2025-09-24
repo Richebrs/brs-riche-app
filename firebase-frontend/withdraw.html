@@ -5,46 +5,51 @@
 <title>Retrait | BRS Riche</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; }
-  header { background:#1976d2; color:white; padding:15px; text-align:center; font-size:20px; }
-  .container { padding:20px; max-width:500px; margin:auto; }
-  label { display:block; margin-top:10px; font-weight:bold; }
-  input, select { width:100%; padding:10px; margin-top:5px; border-radius:5px; border:1px solid #ccc; }
-  button { width:100%; padding:12px; margin-top:20px; border:none; border-radius:5px; background:#1976d2; color:white; font-size:16px; cursor:pointer; }
-  button:disabled { background:#aaa; cursor:not-allowed; }
-  .message { margin-top:15px; padding:10px; border-radius:5px; font-weight:bold; }
-  .success { background:#e8f5e9; color:#2e7d32; }
-  .error { background:#ffebee; color:#c62828; }
-  .info { background:#fff3e0; color:#ef6c00; }
-  .fees { font-size:14px; margin-top:5px; color:#555; }
+  body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f4f6f8; }
+  h2 { text-align:center; color:#1976d2; margin-bottom:20px; }
+  .card { background:white; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); max-width:400px; margin:0 auto; }
+  label { display:block; margin-top:12px; font-weight:bold; }
+  input, select { width:100%; padding:10px; margin-top:5px; border:1px solid #ccc; border-radius:5px; }
+  button { margin-top:20px; width:100%; padding:12px; background:#1976d2; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px; }
+  button:hover { background:#0d47a1; }
+  .info { margin-top:10px; color:#555; font-size:14px; }
+  .success { color:green; font-weight:bold; margin-top:15px; }
+  .error { color:red; font-weight:bold; margin-top:15px; }
+  .balance { text-align:center; font-size:18px; margin-bottom:15px; color:#2e7d32; }
+  .back-btn { display:block; text-align:center; margin-top:20px; padding:10px; background:#ccc; border-radius:5px; text-decoration:none; color:black; }
 </style>
 </head>
 <body>
-<header>💸 Demande de Retrait</header>
-<div class="container">
-  <label for="amount">Montant à retirer (USDT) :</label>
-  <input type="number" id="amount" placeholder="Ex: 10">
 
-  <div class="fees" id="fees-info">👉 Le minimum est 3 USDT. Frais : 1 USDT + 5%.</div>
+<h2>💸 Demande de Retrait</h2>
+
+<div class="card">
+  <div id="balanceDisplay" class="balance">Chargement du solde...</div>
+
+  <label for="amount">Montant à retirer (USDT) :</label>
+  <input type="number" id="amount" min="3" placeholder="Ex: 30">
+
+  <div class="info" id="feeInfo">Frais : 1 USDT + 5%</div>
 
   <label for="network">Réseau :</label>
   <select id="network">
-    <option value="BEP20">BEP20</option>
     <option value="TRC20">TRC20</option>
-    <option value="ERC20">ERC20</option>
+    <option value="BEP20">BEP20</option>
   </select>
 
   <label for="address">Adresse de retrait :</label>
-  <input type="text" id="address" placeholder="Entrez votre adresse USDT">
+  <input type="text" id="address" placeholder="Ex: TX8z...">
 
-  <button id="withdraw-btn">📤 Demander un retrait</button>
+  <button onclick="requestWithdraw()">📤 Demander un retrait</button>
 
-  <div id="message" class="message" style="display:none;"></div>
+  <div id="message"></div>
+
+  <a href="dashboard.html" class="back-btn">⬅ Retourner</a>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <script>
 const firebaseConfig = {
@@ -59,100 +64,92 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-const withdrawBtn = document.getElementById("withdraw-btn");
-const amountInput = document.getElementById("amount");
-const addressInput = document.getElementById("address");
-const networkSelect = document.getElementById("network");
-const messageBox = document.getElementById("message");
-const feesInfo = document.getElementById("fees-info");
+let currentUser, currentBalance = 0;
 
-function showMessage(text, type="info"){
-  messageBox.innerText = text;
-  messageBox.className = "message " + type;
-  messageBox.style.display = "block";
-}
-
-// --- Calcul des frais dynamiques ---
-amountInput.addEventListener("input", ()=>{
-  const amount = parseFloat(amountInput.value);
-  if(isNaN(amount) || amount < 3){
-    feesInfo.innerText = "👉 Le minimum est 3 USDT. Frais : 1 USDT + 5%.";
+// 🔹 Afficher solde disponible
+auth.onAuthStateChanged(async (user)=>{
+  if(user){
+    currentUser = user;
+    const userDoc = await db.collection("users").doc(user.uid).get();
+    if(userDoc.exists){
+      const data = userDoc.data();
+      currentBalance = data.balance || data.totalGains || 0;
+      document.getElementById("balanceDisplay").innerText = 
+        "💰 Solde disponible : " + currentBalance + " USDT";
+    } else {
+      document.getElementById("balanceDisplay").innerText = "⚠️ Profil introuvable";
+    }
   } else {
-    const fees = 1 + (amount * 0.05);
-    const net = amount - fees;
-    feesInfo.innerText = `Frais appliqués : 1 USDT + 5% = ${fees.toFixed(2)} USDT → Vous recevrez environ ${net.toFixed(2)} USDT.`;
+    window.location.href = "login.html"; 
   }
 });
 
-// --- Action de retrait ---
-withdrawBtn.addEventListener("click", async ()=>{
-  const amount = parseFloat(amountInput.value);
-  const network = networkSelect.value;
-  const address = addressInput.value.trim();
+// 🔹 Calcul frais en temps réel
+document.getElementById("amount").addEventListener("input", ()=>{
+  const amount = parseFloat(document.getElementById("amount").value) || 0;
+  const fee = 1 + (amount * 0.05);
+  document.getElementById("feeInfo").innerText = 
+    `Frais appliqués : 1 USDT + 5% = ${fee.toFixed(2)} USDT`;
+});
 
-  if(isNaN(amount) || amount < 3){
-    showMessage("❌ Le montant minimum de retrait est 3 USDT.", "error");
+// 🔹 Demande de retrait
+async function requestWithdraw(){
+  const amount = parseFloat(document.getElementById("amount").value);
+  const network = document.getElementById("network").value;
+  const address = document.getElementById("address").value;
+  const msgBox = document.getElementById("message");
+
+  if(!amount || amount < 3){
+    msgBox.innerHTML = "<p class='error'>❌ Le montant minimum de retrait est 3 USDT.</p>";
     return;
   }
-  if(address.length < 10){
-    showMessage("❌ Veuillez entrer une adresse valide.", "error");
+
+  const fee = 1 + (amount * 0.05);
+  const totalDebit = amount;
+  const received = amount - fee;
+
+  if(amount > currentBalance){
+    msgBox.innerHTML = `<p class='error'>❌ Solde insuffisant. Votre solde est de ${currentBalance} USDT.</p>`;
     return;
   }
 
-  const fees = 1 + (amount * 0.05);
-  const netAmount = amount - fees;
+  if(address.trim() === ""){
+    msgBox.innerHTML = "<p class='error'>❌ Veuillez entrer une adresse de retrait.</p>";
+    return;
+  }
 
   try {
-    const user = auth.currentUser;
-    if(!user){
-      showMessage("❌ Vous devez être connecté.", "error");
-      return;
-    }
-
-    const userRef = db.collection("users").doc(user.uid);
-    const userDoc = await userRef.get();
-
-    if(!userDoc.exists){
-      showMessage("❌ Profil utilisateur introuvable.", "error");
-      return;
-    }
-
-    const userData = userDoc.data();
-    const balance = userData.gains || 0;
-
-    if(balance < amount){
-      showMessage("❌ Solde insuffisant. Votre solde est de " + balance + " USDT.", "error");
-      return;
-    }
-
-    // Déduire du solde
-    await userRef.update({ gains: balance - amount });
-
-    // Enregistrer la demande de retrait
     await db.collection("withdrawals").add({
-      userId: user.uid,
-      email: userData.email || "",
+      userId: currentUser.uid,
+      email: currentUser.email,
       amount: amount,
-      fees: fees,
-      netAmount: netAmount,
+      fee: fee,
+      received: received,
       network: network,
       address: address,
       status: "En attente",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      createdAt: new Date()
     });
 
-    showMessage(`✅ Demande envoyée !\nMontant : ${amount} USDT\nFrais : ${fees.toFixed(2)} USDT\nNet reçu : ${netAmount.toFixed(2)} USDT\nStatut : En attente.`, "success");
+    // Déduire automatiquement du solde
+    await db.collection("users").doc(currentUser.uid).update({
+      balance: currentBalance - amount,
+      totalWithdrawn: firebase.firestore.FieldValue.increment(amount)
+    });
 
-    amountInput.value = "";
-    addressInput.value = "";
-    feesInfo.innerText = "👉 Le minimum est 3 USDT. Frais : 1 USDT + 5%.";
+    msgBox.innerHTML = `<p class='success'>✅ Votre demande de retrait de ${amount} USDT est envoyée. Vous recevrez environ ${received.toFixed(2)} USDT après frais.</p>`;
+    document.getElementById("amount").value = "";
+    document.getElementById("address").value = "";
+    document.getElementById("feeInfo").innerText = "Frais : 1 USDT + 5%";
+    document.getElementById("balanceDisplay").innerText = 
+      "💰 Solde disponible : " + (currentBalance - amount) + " USDT";
+
   } catch (err){
     console.error(err);
-    showMessage("❌ Erreur lors du retrait. Réessayez.", "error");
+    msgBox.innerHTML = "<p class='error'>❌ Erreur lors de la demande. Réessayez.</p>";
   }
-});
+}
 </script>
 </body>
-</html>
-
+      </html>
   
