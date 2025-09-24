@@ -1,44 +1,41 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Retrait - BRS RICHE</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <title>Retrait - BRS RICHE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<style>
-body {
-  font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; display:none; text-align:center;
-}
-header { background:#0d47a1; color:#fff; padding:20px; position:relative; }
-header h1 { margin:0; font-size:1.6em; }
-.container { margin:30px auto; max-width:450px; background:#fff; padding:30px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15); }
-.balance-box { margin-bottom:15px; }
-.balance-box h3 { margin:0; font-size:1em; color:#0d47a1; }
-.balance-box p { margin:5px 0 0; font-size:1.4em; font-weight:bold; }
-input, select { width:100%; padding:12px 10px; margin:8px 0 15px; border-radius:8px; border:1px solid #ccc; font-size:1em; }
-button { padding:12px; width:100%; font-size:1.2em; font-weight:bold; color:#fff; background:#ff9800; border:none; border-radius:12px; cursor:pointer; transition:background 0.2s; }
-button:hover { background:#e68900; }
-.msg { margin:10px 0; font-size:0.95em; }
-.success { color:green; }
-.error { color:red; }
-.history { margin-top:30px; text-align:center; }
-.history h3 { margin-bottom:10px; color:#0d47a1; }
-.history-list { list-style:none; padding:0; max-height:200px; overflow-y:auto; }
-.history-list li { background:#f0f0f0; margin:5px 0; padding:8px; border-radius:8px; font-size:0.95em; }
-.back-btn { margin-top:15px; display:inline-block; text-decoration:none; color:#0d47a1; font-weight:bold; }
-</style>
+  <style>
+    body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; display:none; text-align:center; }
+    header { background:#0d47a1; color:#fff; padding:20px; position:relative; }
+    header h1 { margin:0; font-size:1.6em; }
+    .container { margin:30px auto; max-width:450px; background:#fff; padding:30px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15); }
+    .balance-box { margin-bottom:15px; }
+    .balance-box h3 { margin:0; font-size:1em; color:#0d47a1; }
+    .balance-box p { margin:5px 0 0; font-size:1.4em; font-weight:bold; }
+    input, select { width:100%; padding:12px 10px; margin:8px 0 15px; border-radius:8px; border:1px solid #ccc; font-size:1em; }
+    button { padding:12px; width:100%; font-size:1.2em; font-weight:bold; color:#fff; background:#ff9800; border:none; border-radius:12px; cursor:pointer; transition:background 0.2s; }
+    button:hover { background:#e68900; }
+    .msg { margin:10px 0; font-size:0.95em; }
+    .success { color:green; }
+    .error { color:red; }
+    .history { margin-top:30px; text-align:center; }
+    .history h3 { margin-bottom:10px; color:#0d47a1; }
+    .history-list { list-style:none; padding:0; max-height:200px; overflow-y:auto; }
+    .history-list li { background:#f0f0f0; margin:5px 0; padding:8px; border-radius:8px; font-size:0.95em; }
+    .back-btn { margin-top:15px; display:inline-block; text-decoration:none; color:#fff; font-weight:bold; position:absolute; top:20px; right:20px; }
+  </style>
 </head>
-
 <body>
 <header>
   <h1>💸 Demande de Retrait</h1>
-  <a href="dashboard.html" class="back-btn">⬅ Retour au Dashboard</a>
+  <a href="dashboard.html" class="back-btn">⬅ Retour</a>
 </header>
 
 <div class="container">
@@ -97,7 +94,7 @@ auth.onAuthStateChanged(user => {
   if(!user) return window.location.href="login.html";
 
   const userRef = db.collection("users").doc(user.uid);
-  
+
   userRef.onSnapshot(doc => {
     if(doc.exists){
       const data = doc.data();
@@ -112,7 +109,7 @@ auth.onAuthStateChanged(user => {
     }
   });
 
-  // Charger historique
+  // Historique retraits
   const histRef = db.collection("transactions").doc(user.uid).collection("withdrawals").orderBy("createdAt","desc").limit(10);
   histRef.onSnapshot(snapshot => {
     historyListEl.innerHTML = "";
@@ -125,24 +122,24 @@ auth.onAuthStateChanged(user => {
   });
 });
 
-// Calcul frais 5% et net
+// Mise à jour frais
 function updateFee(){
   const amt = parseFloat(amountEl.value) || 0;
   if(amt < 3){
-    feeTextEl.innerText = `Montant minimum : 3 USDT`;
+    feeTextEl.innerText = "Montant minimum : 3 USDT";
     return;
   }
   if(amt > balanceAvailable){
-    feeTextEl.innerText = `Montant supérieur au solde disponible !`;
+    feeTextEl.innerText = "Montant supérieur au solde disponible !";
     return;
   }
   const fee = amt * 0.05;
   const net = amt - fee;
   feeTextEl.innerText = `Frais (5%) : ${fee.toFixed(2)} USDT | Net à recevoir : ${net.toFixed(2)} USDT`;
 }
-
 amountEl.addEventListener("input", updateFee);
 
+// Retrait
 document.getElementById("withdraw-btn").addEventListener("click", async ()=>{
   messageEl.innerText = "";
   const amt = parseFloat(amountEl.value);
@@ -200,5 +197,5 @@ document.getElementById("withdraw-btn").addEventListener("click", async ()=>{
 });
 </script>
 </body>
-  </html>
-                                                      
+                             </html>
+  
