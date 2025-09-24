@@ -1,146 +1,164 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BRS Riche - Admin Retraits</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h2 { text-align: center; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-    th { background-color: #f2f2f2; }
-    button { padding: 5px 10px; border-radius: 5px; border: none; cursor: pointer; }
-    .approve { background-color: green; color: white; }
-    .reject { background-color: red; color: white; }
-    .info { font-weight: bold; }
-    select { padding: 5px 10px; margin-bottom: 10px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Retraits</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f4f8;
+    margin: 0;
+    padding: 20px;
+  }
+  h2 { text-align: center; color: #2c3e50; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  th, td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+  }
+  th {
+    background-color: #2980b9;
+    color: white;
+  }
+  tr:hover { background-color: #f1f1f1; }
+  button {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    margin: 2px;
+  }
+  .approve { background: #27ae60; color: white; }
+  .reject { background: #e74c3c; color: white; }
+  .message { text-align: center; margin-top: 15px; font-weight: bold; }
+  .success { color: #27ae60; }
+  .error { color: #e74c3c; }
+</style>
 </head>
 <body>
-  <h2>💸 Gestion des Retraits</h2>
 
-  <label>Filtrer par statut :</label>
-  <select id="statusFilter">
-    <option value="all">Tous</option>
-    <option value="pending">En attente</option>
-    <option value="approved">Validé</option>
-    <option value="rejected">Rejeté</option>
-  </select>
+<h2>💼 Administration des Retraits</h2>
+<div class="message" id="message"></div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Utilisateur</th>
-        <th>Balance</th>
-        <th>Total Gains</th>
-        <th>Total Retiré</th>
-        <th>Montant</th>
-        <th>Frais (5%)</th>
-        <th>Net à recevoir</th>
-        <th>Réseau</th>
-        <th>Adresse</th>
-        <th>Statut</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="withdrawalsTable">
-      <tr><td colspan="11">Chargement...</td></tr>
-    </tbody>
-  </table>
+<table>
+  <thead>
+    <tr>
+      <th>Utilisateur</th>
+      <th>Solde</th>
+      <th>Gains totaux</th>
+      <th>Déjà retiré</th>
+      <th>Montant</th>
+      <th>Frais (5%)</th>
+      <th>Net</th>
+      <th>Réseau</th>
+      <th>Adresse</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="withdrawalsTable">
+    <!-- Les retraits seront injectés ici -->
+  </tbody>
+</table>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
-      authDomain: "brs-riche-2.firebaseapp.com",
-      projectId: "brs-riche-2",
-      storageBucket: "brs-riche-2.appspot.com",
-      messagingSenderId: "313874599780",
-      appId: "1:313874599780:web:xxxxxx"
-    };
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+    authDomain: "brs-riche-2.firebaseapp.com",
+    projectId: "brs-riche-2",
+    storageBucket: "brs-riche-2.appspot.com",
+    messagingSenderId: "313874599780",
+    appId: "1:313874599780:web:xxxxxx"
+  };
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-    auth.onAuthStateChanged(user => {
-      if (!user) {
-        alert("Veuillez vous connecter en tant qu'admin !");
-        window.location.href = "login.html";
-      } else {
-        loadWithdrawals();
-      }
-    });
+  const withdrawalsTable = document.getElementById("withdrawalsTable");
+  const messageDiv = document.getElementById("message");
 
-    document.getElementById("statusFilter").addEventListener("change", loadWithdrawals);
+  // Vérification admin
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      messageDiv.innerHTML = "<span class='error'>⚠ Veuillez vous connecter</span>";
+      return;
+    }
+    const doc = await db.collection("users").doc(user.uid).get();
+    if (!doc.exists || doc.data().role !== "admin") {
+      messageDiv.innerHTML = "<span class='error'>❌ Accès refusé : vous n'êtes pas admin</span>";
+      return;
+    }
+    loadWithdrawals();
+  });
 
-    async function loadWithdrawals() {
-      const filter = document.getElementById("statusFilter").value;
-      let query = db.collection("withdrawals").orderBy("createdAt", "desc");
-      if (filter !== "all") query = query.where("status", "==", filter);
-
-      const snapshot = await query.get();
-      const table = document.getElementById("withdrawalsTable");
-      table.innerHTML = "";
-
-      if (snapshot.empty) {
-        table.innerHTML = "<tr><td colspan='11'>Aucun retrait trouvé</td></tr>";
-        return;
-      }
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const fees = data.amount * 0.05;
-        const net = data.amount - fees;
-
+  async function loadWithdrawals() {
+    withdrawalsTable.innerHTML = "";
+    const snapshot = await db.collection("withdrawals").orderBy("createdAt", "desc").get();
+    snapshot.forEach(doc => {
+      const w = doc.data();
+      if (w.status === "pending") {
         const row = document.createElement("tr");
         row.innerHTML = `
-          <td>${data.username}</td>
-          <td>${data.balance || 0}</td>
-          <td>${data.totalGains || 0}</td>
-          <td>${data.totalWithdrawn || 0}</td>
-          <td>${data.amount}</td>
-          <td>${fees.toFixed(2)}</td>
-          <td>${net.toFixed(2)}</td>
-          <td>${data.network}</td>
-          <td>${data.wallet}</td>
-          <td>${data.status}</td>
+          <td>${w.username}</td>
+          <td>${w.balance || 0}</td>
+          <td>${w.totalGains || 0}</td>
+          <td>${w.totalWithdrawn || 0}</td>
+          <td>${w.amount}</td>
+          <td>${w.fees.toFixed(2)}</td>
+          <td>${w.net.toFixed(2)}</td>
+          <td>${w.network}</td>
+          <td>${w.wallet}</td>
           <td>
-            ${data.status === "pending" ? `
-              <button class="approve" onclick="updateStatus('${doc.id}', 'approved')">✅ Valider</button>
-              <button class="reject" onclick="updateStatus('${doc.id}', 'rejected')">❌ Rejeter</button>
-            ` : "-"}
+            <button class="approve" onclick="updateStatus('${doc.id}', 'approved')">✅ Approuver</button>
+            <button class="reject" onclick="updateStatus('${doc.id}', 'rejected')">❌ Refuser</button>
           </td>
         `;
-        table.appendChild(row);
-      });
-    }
-
-    async function updateStatus(docId, status) {
-      const docRef = db.collection("withdrawals").doc(docId);
-      const docSnap = await docRef.get();
-      if (!docSnap.exists) return alert("Document introuvable");
-
-      const data = docSnap.data();
-
-      if (status === "rejected") {
-        const userRef = db.collection("users").doc(data.userId);
-        const userSnap = await userRef.get();
-        if (userSnap.exists) {
-          await userRef.update({ balance: (userSnap.data().balance || 0) + data.amount });
-        }
+        withdrawalsTable.appendChild(row);
       }
+    });
+  }
 
-      await docRef.update({ status });
+  async function updateStatus(id, status) {
+    try {
+      const docRef = db.collection("withdrawals").doc(id);
+      const withdrawal = await docRef.get();
+      if (!withdrawal.exists) return;
+      const data = withdrawal.data();
+      const userRef = db.collection("users").doc(data.userId);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) return;
+
+      if (status === "approved") {
+        await docRef.update({status: "approved"});
+      } else if (status === "rejected") {
+        // Rembourse le solde si rejet
+        await userRef.update({
+          balance: userDoc.data().balance + data.amount
+        });
+        await docRef.update({status: "rejected"});
+      }
+      messageDiv.innerHTML = `<span class='success'>Mise à jour réussie</span>`;
       loadWithdrawals();
+    } catch (err) {
+      messageDiv.innerHTML = `<span class='error'>Erreur: ${err.message}</span>`;
     }
-  </script>
-</body>
-</html>
+  }
+</script>
 
-                         
+</body>
+  </html>
+  
