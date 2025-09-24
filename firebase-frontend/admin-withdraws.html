@@ -1,175 +1,111 @@
-
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Admin - Retraits | BRS Riche</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Gestion des Retraits</title>
   <style>
-    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f6f8; }
-    header { background:#1976d2; color:white; padding:15px; text-align:center; font-size:20px; }
-    .container { padding:20px; }
-    .filter { margin-bottom:15px; text-align:center; }
-    .filter select { padding:8px; border-radius:5px; border:1px solid #ccc; }
-    .card { background:white; padding:15px; margin-bottom:15px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-    .card h3 { margin:0 0 10px; }
-    .actions { margin-top:10px; }
-    .btn { padding:8px 12px; margin-right:8px; border:none; border-radius:5px; cursor:pointer; color:white; }
-    .btn-accept { background:#2e7d32; }
-    .btn-refuse { background:#c62828; }
-    .status { font-weight:bold; margin-top:10px; }
-    .status.pending { color:orange; }
-    .status.approved { color:green; }
-    .status.refused { color:red; }
-    .copy-btn { background:#0d47a1; color:white; border:none; padding:4px 8px; border-radius:5px; cursor:pointer; margin-left:6px; font-size:12px; }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h2 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+    th { background: #f5f5f5; }
+    button { padding: 5px 10px; border-radius: 5px; margin: 2px; cursor: pointer; }
+    .approve { background: green; color: white; }
+    .reject { background: red; color: white; }
   </style>
 </head>
 <body>
-<header>💸 Tableau de validation des retraits</header>
+  <h2>💼 Administration - Retraits</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Utilisateur</th>
+        <th>Email</th>
+        <th>Montant</th>
+        <th>Frais</th>
+        <th>Net</th>
+        <th>Réseau</th>
+        <th>Adresse</th>
+        <th>Date</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="withdrawList"></tbody>
+  </table>
 
-<div class="container">
-  <div class="filter">
-    <label for="statusFilter">Filtrer par statut :</label>
-    <select id="statusFilter">
-      <option value="all">Tous</option>
-      <option value="En attente">En attente</option>
-      <option value="Succès">Succès</option>
-      <option value="Annulé">Annulé</option>
-    </select>
-  </div>
-  <div id="withdrawals-container">
-    <p>Chargement des retraits...</p>
-  </div>
-</div>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<audio id="notif-sound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3" preload="auto"></audio>
+  <script>
+    // Config Firebase (BRS-Riche-2)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+      authDomain: "brs-riche-2.firebaseapp.com",
+      projectId: "brs-riche-2",
+      storageBucket: "brs-riche-2.appspot.com",
+      messagingSenderId: "313874599780",
+      appId: "1:313874599780:web:xxxxxx"
+    };
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src("https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src("https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-<script>
-// Config Firebase — utilise la même que pour les autres pages
-const firebaseConfig = {
-  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
-  authDomain: "brs-riche-2.firebaseapp.com",
-  projectId: "brs-riche-2",
-  storageBucket: "brs-riche-2.appspot.com",
-  messagingSenderId: "313874599780",
-  appId: "1:313874599780:web:xxxxxx"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
+    // Charger la liste des retraits en attente
+    db.collection("withdrawals")
+      .where("status", "==", "pending")
+      .orderBy("createdAt", "desc")
+      .onSnapshot(async (snapshot) => {
+        const list = document.getElementById("withdrawList");
+        list.innerHTML = "";
+        for (const doc of snapshot.docs) {
+          const data = doc.data();
+          const userDoc = await db.collection("users").doc(data.userId).get();
+          const userData = userDoc.exists ? userDoc.data() : {};
 
-const withdrawalsContainer = document.getElementById("withdrawals-container");
-const statusFilter = document.getElementById("statusFilter");
-const notifSound = document.getElementById("notif-sound");
-let currentFilter = "all";
-let seenIds = new Set();
+          const row = `
+            <tr>
+              <td>${data.username || "N/A"}</td>
+              <td>${userData.email || "N/A"}</td>
+              <td>${data.amount} USDT</td>
+              <td>${data.fees.toFixed(2)} USDT</td>
+              <td>${data.net.toFixed(2)} USDT</td>
+              <td>${data.network}</td>
+              <td>${data.wallet}</td>
+              <td>${data.createdAt ? data.createdAt.toDate().toLocaleString() : "N/A"}</td>
+              <td>
+                <button class="approve" onclick="approveWithdraw('${doc.id}', '${data.userId}', ${data.amount})">✅ Valider</button>
+                <button class="reject" onclick="rejectWithdraw('${doc.id}', '${data.userId}', ${data.amount})">❌ Refuser</button>
+              </td>
+            </tr>
+          `;
+          list.innerHTML += row;
+        }
+      });
 
-// fonction pour copier texte
-function copyText(text){
-  navigator.clipboard.writeText(text).then(()=>alert("Copié !")).catch(err=>console.error("Erreur copie", err));
-}
-
-function renderWithdrawals(docs){
-  withdrawalsContainer.innerHTML = "";
-  const filtered = docs.filter(doc=>{
-    const data = doc.data();
-    if(currentFilter === "all") return true;
-    return data.status === currentFilter;
-  });
-
-  if(filtered.length === 0){
-    withdrawalsContainer.innerHTML = "<p>Aucun retrait trouvé.</p>";
-    return;
-  }
-
-  filtered.forEach(doc=>{
-    const data = doc.data();
-    const card = document.createElement("div");
-    card.className = "card";
-
-    const statusClass = data.status === "En attente" ? "pending" :
-                        data.status === "Succès" ? "approved" :
-                        data.status === "Annulé" ? "refused" : "";
-
-    // date format
-    let createdAt = "-";
-    if(data.createdAt && data.createdAt.toDate) {
-      createdAt = data.createdAt.toDate().toLocaleString();
-    } else if (data.createdAt) {
-      createdAt = data.createdAt;
+    // ✅ Valider un retrait
+    async function approveWithdraw(withdrawId, userId, amount) {
+      await db.collection("withdrawals").doc(withdrawId).update({ status: "approved" });
+      alert("✅ Retrait validé avec succès !");
     }
 
-    card.innerHTML = `
-      <h3>👤 ${data.email || "Utilisateur inconnu"}</h3>
-      <p>💵 Montant demandé : <b>${data.amount || "-"}</b> USDT</p>
-      <p>💰 Frais : ${data.fees || "0"} USDT</p>
-      <p>✅ Montant net : ${data.netAmount || "-"} USDT</p>
-      <p>🌐 Réseau : ${data.network || "-"}</p>
-      <p>🏦 Adresse retrait : ${data.address || "-"} 
-         <button class="copy-btn" onclick="copyText('${data.address || ""}')">Copier</button></p>
-      <p>📅 Date : ${createdAt}</p>
-      <p class="status ${statusClass}">Statut : ${data.status || "Inconnu"}</p>
-      <div class="actions">
-        <button class="btn btn-accept" onclick="updateStatus('${doc.id}','Succès')">✅ Accepter</button>
-        <button class="btn btn-refuse" onclick="updateStatus('${doc.id}','Annulé')">❌ Refuser</button>
-      </div>
-    `;
-    withdrawalsContainer.appendChild(card);
-
-    if(!seenIds.has(doc.id) && data.status === "En attente"){
-      notifSound.play();
-      seenIds.add(doc.id);
-    }
-  });
-}
-
-// écoute temps réel
-db.collection("withdrawals").orderBy("createdAt","desc")
-  .onSnapshot(snapshot => {
-    renderWithdrawals(snapshot.docs);
-  });
-
-// filtrer selon statut
-statusFilter.addEventListener("change", e=>{
-  currentFilter = e.target.value;
-  db.collection("withdrawals").orderBy("createdAt","desc").get().then(snapshot=>{
-    renderWithdrawals(snapshot.docs);
-  });
-});
-
-// mise à jour du statut
-function updateStatus(docId, status) {
-  db.collection("withdrawals").doc(docId).update({ status })
-    .then(()=> {
-      alert("Le retrait a été " + (status === "Succès" ? "accepté ✅" : "refusé ❌"));
-    })
-    .catch(err => {
-      console.error("Erreur update retrait:", err);
-      alert("Erreur lors de la mise à jour du statut");
-    });
-}
-
-// vérifier que l’admin est connecté (optionnel, selon ton système d’auth)
-auth.onAuthStateChanged(user =>{
-  if(!user){
-    window.location.href = "login.html";
-  } else {
-    // tu peux vérifier que l’utilisateur est bien admin
-    // exemple : lire son rôle dans users/{user.uid} puis refuser s’il n’est pas admin
-    db.collection("users").doc(user.uid).get().then(doc=>{
-      const d = doc.data();
-      if(d.role !== "Admis") {
-        alert("Accès non autorisé");
-        window.location.href = "login.html";
+    // ❌ Refuser un retrait (recrédite le solde utilisateur)
+    async function rejectWithdraw(withdrawId, userId, amount) {
+      const userRef = db.collection("users").doc(userId);
+      const userSnap = await userRef.get();
+      if (userSnap.exists) {
+        const userData = userSnap.data();
+        await userRef.update({
+          balance: (userData.balance || 0) + amount,
+          totalWithdrawn: (userData.totalWithdrawn || 0) - amount
+        });
       }
-    });
-  }
-});
-</script>
+      await db.collection("withdrawals").doc(withdrawId).update({ status: "rejected" });
+      alert("❌ Retrait refusé et montant recrédité !");
+    }
+  </script>
 </body>
 </html>
-
