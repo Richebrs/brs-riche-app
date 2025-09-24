@@ -49,6 +49,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
+    // Config Firebase (BRS-Riche-2)
     const firebaseConfig = {
       apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
       authDomain: "brs-riche-2.firebaseapp.com",
@@ -64,6 +65,7 @@
 
     let currentUserDoc;
 
+    // Récupération utilisateur connecté
     auth.onAuthStateChanged(async (user) => {
       if (user) {
         const docRef = db.collection("users").doc(user.uid);
@@ -76,16 +78,14 @@
           document.getElementById("withdrawn").textContent = data.totalWithdrawn || 0;
         }
       } else {
-        // ⚠ Pas de redirection automatique, juste un message
-        document.getElementById("message").innerHTML =
-          "<span class='error'>⚠ Veuillez vous connecter pour effectuer un retrait</span>";
+        document.getElementById("message").innerHTML = "<span class='error'>⚠ Veuillez vous connecter</span>";
       }
     });
 
     // Calcul des frais et net
     document.getElementById("amount").addEventListener("input", () => {
       const amount = parseFloat(document.getElementById("amount").value) || 0;
-      const fees = 1 + (amount * 0.05);
+      const fees = amount * 0.05; // Seulement 5%
       const net = amount - fees;
       document.getElementById("fees").textContent = fees.toFixed(2);
       document.getElementById("net").textContent = net > 0 ? net.toFixed(2) : 0;
@@ -96,7 +96,7 @@
       const amount = parseFloat(document.getElementById("amount").value);
       const walletAddress = document.getElementById("walletAddress").value;
       const network = document.getElementById("network").value;
-      const fees = 1 + (amount * 0.05);
+      const fees = amount * 0.05;
       const net = amount - fees;
 
       if (!amount || amount <= 0) {
@@ -111,7 +111,7 @@
       const userDoc = await currentUserDoc.get();
       const data = userDoc.data();
       if (data.balance < amount) {
-        document.getElementById("message").innerHTML = `<span class='error'>❌ Solde insuffisant. Solde disponible : ${data.balance} USDT</span>`;
+        document.getElementById("message").innerHTML = "<span class='error'>❌ Solde insuffisant</span>";
         return;
       }
 
@@ -139,4 +139,5 @@
     }
   </script>
 </body>
-</html>
+    </html>
+  
