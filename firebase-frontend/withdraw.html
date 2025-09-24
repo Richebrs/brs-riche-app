@@ -1,155 +1,146 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Retrait | BRS Riche</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f4f6f8; }
-  h2 { text-align:center; color:#1976d2; margin-bottom:20px; }
-  .card { background:white; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); max-width:400px; margin:0 auto; }
-  label { display:block; margin-top:12px; font-weight:bold; }
-  input, select { width:100%; padding:10px; margin-top:5px; border:1px solid #ccc; border-radius:5px; }
-  button { margin-top:20px; width:100%; padding:12px; background:#1976d2; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px; }
-  button:hover { background:#0d47a1; }
-  .info { margin-top:10px; color:#555; font-size:14px; }
-  .success { color:green; font-weight:bold; margin-top:15px; }
-  .error { color:red; font-weight:bold; margin-top:15px; }
-  .balance { text-align:center; font-size:18px; margin-bottom:15px; color:#2e7d32; }
-  .back-btn { display:block; text-align:center; margin-top:20px; padding:10px; background:#ccc; border-radius:5px; text-decoration:none; color:black; }
-</style>
+  <meta charset="UTF-8">
+  <title>Retrait - BRS Riche</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    h2 { color: #333; }
+    label { font-weight: bold; display: block; margin-top: 10px; }
+    input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; }
+    button { background: #28a745; color: white; border: none; padding: 12px; width: 100%; margin-top: 15px; border-radius: 8px; font-size: 16px; cursor: pointer; }
+    button:hover { background: #218838; }
+    .back-btn { display: block; text-align: center; margin-top: 15px; color: #007bff; text-decoration: none; }
+    .back-btn:hover { text-decoration: underline; }
+    .info { margin-top: 10px; font-size: 14px; color: #555; }
+    .error { color: red; margin-top: 10px; }
+    .success { color: green; margin-top: 10px; }
+  </style>
 </head>
 <body>
+  <div class="card">
+    <h2>💸 Demande de Retrait</h2>
+    <p><strong>💰 Solde disponible :</strong> <span id="availableBalance">Chargement...</span></p>
 
-<h2>💸 Demande de Retrait</h2>
+    <label>Montant à retirer (USDT) :</label>
+    <input type="number" id="withdrawAmount" placeholder="Entrez le montant">
 
-<div class="card">
-  <div id="balanceDisplay" class="balance">Chargement du solde...</div>
+    <p class="info">📌 Frais : 1 USDT + 5% du montant</p>
+    <p><strong>Net à recevoir :</strong> <span id="netReceive">0</span> USDT</p>
 
-  <label for="amount">Montant à retirer (USDT) :</label>
-  <input type="number" id="amount" min="3" placeholder="Ex: 30">
+    <label>Réseau :</label>
+    <select id="network">
+      <option value="TRC20">TRC20</option>
+      <option value="BEP20">BEP20</option>
+    </select>
 
-  <div class="info" id="feeInfo">Frais : 1 USDT + 5%</div>
+    <label>Adresse de retrait :</label>
+    <input type="text" id="withdrawAddress" placeholder="Entrez l'adresse de votre portefeuille">
 
-  <label for="network">Réseau :</label>
-  <select id="network">
-    <option value="TRC20">TRC20</option>
-    <option value="BEP20">BEP20</option>
-  </select>
+    <button onclick="requestWithdraw()">📤 Demander un retrait</button>
+    <p id="message"></p>
+    <a href="dashboard.html" class="back-btn">⬅ Retourner</a>
+  </div>
 
-  <label for="address">Adresse de retrait :</label>
-  <input type="text" id="address" placeholder="Ex: TX8z...">
+  <script>
+    // ✅ Configuration Firebase (à remplacer par la tienne)
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-  <button onclick="requestWithdraw()">📤 Demander un retrait</button>
+    let availableBalance = 0;
 
-  <div id="message"></div>
+    // ✅ Récupérer solde utilisateur
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const doc = await db.collection("users").doc(user.uid).get();
+        if (doc.exists) {
+          const data = doc.data();
+          availableBalance = data.wallet?.balance || data.totalGains || 0;
+          document.getElementById("availableBalance").textContent = availableBalance + " USDT";
+        }
+      } else {
+        window.location.href = "login.html";
+      }
+    });
 
-  <a href="dashboard.html" class="back-btn">⬅ Retourner</a>
-</div>
+    // ✅ Calculer net à recevoir
+    document.getElementById("withdrawAmount").addEventListener("input", function() {
+      const amount = parseFloat(this.value) || 0;
+      const fees = 1 + (amount * 0.05);
+      const net = amount - fees;
+      document.getElementById("netReceive").textContent = net > 0 ? net.toFixed(2) : 0;
+    });
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    // ✅ Demande de retrait
+    async function requestWithdraw() {
+      const amount = parseFloat(document.getElementById("withdrawAmount").value);
+      const address = document.getElementById("withdrawAddress").value;
+      const network = document.getElementById("network").value;
+      const messageEl = document.getElementById("message");
 
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
-  authDomain: "brs-riche-2.firebaseapp.com",
-  projectId: "brs-riche-2",
-  storageBucket: "brs-riche-2.appspot.com",
-  messagingSenderId: "313874599780",
-  appId: "1:313874599780:web:xxxxxx"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
+      if (!amount || amount < 3) {
+        messageEl.textContent = "❌ Le minimum de retrait est 3 USDT.";
+        messageEl.className = "error";
+        return;
+      }
 
-let currentUser, currentBalance = 0;
+      const fees = 1 + (amount * 0.05);
+      const net = amount - fees;
 
-// 🔹 Afficher solde disponible
-auth.onAuthStateChanged(async (user)=>{
-  if(user){
-    currentUser = user;
-    const userDoc = await db.collection("users").doc(user.uid).get();
-    if(userDoc.exists){
-      const data = userDoc.data();
-      currentBalance = data.balance || data.totalGains || 0;
-      document.getElementById("balanceDisplay").innerText = 
-        "💰 Solde disponible : " + currentBalance + " USDT";
-    } else {
-      document.getElementById("balanceDisplay").innerText = "⚠️ Profil introuvable";
+      if (amount > availableBalance) {
+        messageEl.textContent = "❌ Solde insuffisant. Votre solde est de " + availableBalance + " USDT.";
+        messageEl.className = "error";
+        return;
+      }
+
+      if (!address) {
+        messageEl.textContent = "❌ Veuillez entrer une adresse de retrait.";
+        messageEl.className = "error";
+        return;
+      }
+
+      const user = auth.currentUser;
+      if (!user) return;
+
+      // ✅ Enregistrer le retrait
+      await db.collection("withdrawals").add({
+        userId: user.uid,
+        amount: amount,
+        fees: fees,
+        net: net,
+        network: network,
+        address: address,
+        status: "En attente",
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // ✅ Déduire le solde dans Firestore
+      await db.collection("users").doc(user.uid).update({
+        "wallet.balance": availableBalance - amount,
+        totalWithdrawn: firebase.firestore.FieldValue.increment(amount)
+      });
+
+      messageEl.textContent = "✅ Retrait demandé avec succès ! Vous recevrez " + net.toFixed(2) + " USDT.";
+      messageEl.className = "success";
+
+      document.getElementById("withdrawAmount").value = "";
+      document.getElementById("withdrawAddress").value = "";
+      document.getElementById("netReceive").textContent = "0";
+      availableBalance -= amount;
+      document.getElementById("availableBalance").textContent = availableBalance + " USDT";
     }
-  } else {
-    window.location.href = "login.html"; 
-  }
-});
-
-// 🔹 Calcul frais en temps réel
-document.getElementById("amount").addEventListener("input", ()=>{
-  const amount = parseFloat(document.getElementById("amount").value) || 0;
-  const fee = 1 + (amount * 0.05);
-  document.getElementById("feeInfo").innerText = 
-    `Frais appliqués : 1 USDT + 5% = ${fee.toFixed(2)} USDT`;
-});
-
-// 🔹 Demande de retrait
-async function requestWithdraw(){
-  const amount = parseFloat(document.getElementById("amount").value);
-  const network = document.getElementById("network").value;
-  const address = document.getElementById("address").value;
-  const msgBox = document.getElementById("message");
-
-  if(!amount || amount < 3){
-    msgBox.innerHTML = "<p class='error'>❌ Le montant minimum de retrait est 3 USDT.</p>";
-    return;
-  }
-
-  const fee = 1 + (amount * 0.05);
-  const totalDebit = amount;
-  const received = amount - fee;
-
-  if(amount > currentBalance){
-    msgBox.innerHTML = `<p class='error'>❌ Solde insuffisant. Votre solde est de ${currentBalance} USDT.</p>`;
-    return;
-  }
-
-  if(address.trim() === ""){
-    msgBox.innerHTML = "<p class='error'>❌ Veuillez entrer une adresse de retrait.</p>";
-    return;
-  }
-
-  try {
-    await db.collection("withdrawals").add({
-      userId: currentUser.uid,
-      email: currentUser.email,
-      amount: amount,
-      fee: fee,
-      received: received,
-      network: network,
-      address: address,
-      status: "En attente",
-      createdAt: new Date()
-    });
-
-    // Déduire automatiquement du solde
-    await db.collection("users").doc(currentUser.uid).update({
-      balance: currentBalance - amount,
-      totalWithdrawn: firebase.firestore.FieldValue.increment(amount)
-    });
-
-    msgBox.innerHTML = `<p class='success'>✅ Votre demande de retrait de ${amount} USDT est envoyée. Vous recevrez environ ${received.toFixed(2)} USDT après frais.</p>`;
-    document.getElementById("amount").value = "";
-    document.getElementById("address").value = "";
-    document.getElementById("feeInfo").innerText = "Frais : 1 USDT + 5%";
-    document.getElementById("balanceDisplay").innerText = 
-      "💰 Solde disponible : " + (currentBalance - amount) + " USDT";
-
-  } catch (err){
-    console.error(err);
-    msgBox.innerHTML = "<p class='error'>❌ Erreur lors de la demande. Réessayez.</p>";
-  }
-}
-</script>
+  </script>
 </body>
-      </html>
-  
+                                                                                    </html>
+      
