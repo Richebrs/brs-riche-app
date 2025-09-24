@@ -39,6 +39,8 @@
 
     <button onclick="requestWithdraw()">📤 Demander un retrait</button>
     <p id="message"></p>
+
+    <button onclick="window.history.back()">⬅ Retourner</button>
   </div>
 
   <!-- Firebase -->
@@ -47,7 +49,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // Config Firebase (BRS-Riche-2)
     const firebaseConfig = {
       apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
       authDomain: "brs-riche-2.firebaseapp.com",
@@ -63,7 +64,6 @@
 
     let currentUserDoc;
 
-    // Récupération utilisateur connecté
     auth.onAuthStateChanged(async (user) => {
       if (user) {
         const docRef = db.collection("users").doc(user.uid);
@@ -76,7 +76,9 @@
           document.getElementById("withdrawn").textContent = data.totalWithdrawn || 0;
         }
       } else {
-        document.getElementById("message").innerHTML = "<span class='error'>⚠ Veuillez vous connecter</span>";
+        // ⚠ Pas de redirection automatique, juste un message
+        document.getElementById("message").innerHTML =
+          "<span class='error'>⚠ Veuillez vous connecter pour effectuer un retrait</span>";
       }
     });
 
@@ -109,7 +111,7 @@
       const userDoc = await currentUserDoc.get();
       const data = userDoc.data();
       if (data.balance < amount) {
-        document.getElementById("message").innerHTML = "<span class='error'>❌ Solde insuffisant</span>";
+        document.getElementById("message").innerHTML = `<span class='error'>❌ Solde insuffisant. Solde disponible : ${data.balance} USDT</span>`;
         return;
       }
 
@@ -137,5 +139,4 @@
     }
   </script>
 </body>
-    </html>
-  
+</html>
