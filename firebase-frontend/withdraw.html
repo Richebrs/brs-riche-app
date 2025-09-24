@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BRS Riche - Retrait</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .card { border: 1px solid #ddd; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; }
+    h2 { text-align: center; }
+    label { display: block; margin-top: 10px; }
+    input, select, button { width: 100%; padding: 8px; margin-top: 5px; border-radius: 6px; border: 1px solid #ccc; }
+    .info { margin: 10px 0; font-weight: bold; }
+    .error { color: red; font-weight: bold; }
+    .success { color: green; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>💸 Demande de Retrait</h2>
+    <div class="info">💰 Solde disponible : <span id="balance">0</span> USDT</div>
+    <div class="info">📈 Gains totaux : <span id="gains">0</span> USDT</div>
+    <div class="info">🏦 Déjà retiré : <span id="withdrawn">0</span> USDT</div>
+
+    <label>Montant à retirer (USDT) :</label>
+    <input type="number" id="amount" min="1" placeholder="Ex: 50">
+
+    <div class="info">Frais : <span id="fees">0</span> USDT</div>
+    <div class="info">Net à recevoir : <span id="net">0</span> USDT</div>
+
+    <label>Réseau :</label>
+    <select id="network">
+      <option value="TRC20">TRC20</option>
+      <option value="ERC20">ERC20</option>
+    </select>
+
+    <label>Adresse de retrait :</label>
+    <input type="text" id="walletAddress" placeholder="Votre adresse USDT">
+
+    <button onclick="requestWithdraw()">📤 Demander un retrait</button>
+    <p id="message"></p>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Config Firebase (BRS-Riche-2)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+      authDomain: "brs-riche-2.firebaseapp.com",
+      projectId: "brs-riche-2",
+      storageBucket: "brs-riche-2.appspot.com",
+      messagingSenderId: "313874599780",
+      appId: "1:313874599780:web:xxxxxx"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentUserDoc;
+
+    // Récupération utilisateur connecté
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const docRef = db.collection("users").doc(user.uid);
+        const doc = await docRef.get();
+        if (doc.exists) {
+          currentUserDoc = docRef;
+          const data = doc.data();
+          document.getElementById("balance").textContent = data.balance || 0;
+          document.getElementById("gains").textContent = data.totalGains || 0;
+          document.getElementById("withdrawn").textContent = data.totalWithdrawn || 0;
+        }
+      } else {
+        document.getElementById("message").innerHTML = "<span class='error'>⚠ Veuillez vous connecter</span>";
+      }
+    });
+
+    // Calcul des frais et net
+    document.getElementById("amount").addEventListener("input", () => {
+      const amount = parseFloat(document.getElementById("amount").value) || 0;
+      const fees = 1 + (amount * 0.05);
+      const net = amount - fees;
+      document.getElementById("fees").textContent = fees.toFixed(2);
+      document.getElementById("net").textContent = net > 0 ? net.toFixed(2) : 0;
+    });
+
+    // Demande de retrait
+    async function requestWithdraw() {
+      const amount = parseFloat(document.getElementById("amount").value);
+      const walletAddress = document.getElementById("walletAddress").value;
+      const network = document.getElementById("network").value;
+      const fees = 1 + (amount * 0.05);
+      const net = amount - fees;
+
+      if (!amount || amount <= 0) {
+        document.getElementById("message").innerHTML = "<span class='error'>⚠ Montant invalide</span>";
+        return;
+      }
+      if (!walletAddress) {
+        document.getElementById("message").innerHTML = "<span class='error'>⚠ Adresse requise</span>";
+        return;
+      }
+
+      const userDoc = await currentUserDoc.get();
+      const data = userDoc.data();
+      if (data.balance < amount) {
+        document.getElementById("message").innerHTML = "<span class='error'>❌ Solde insuffisant</span>";
+        return;
+      }
+
+      // Déduire le solde et enregistrer le retrait
+      await currentUserDoc.update({
+        balance: data.balance - amount,
+        totalWithdrawn: (data.totalWithdrawn || 0) + amount
+      });
+
+      await db.collection("withdrawals").add({
+        userId: auth.currentUser.uid,
+        username: data.username,
+        amount: amount,
+        fees: fees,
+        net: net,
+        wallet: walletAddress,
+        network: network,
+        status: "pending",
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      document.getElementById("message").innerHTML = "<span class='success'>✅ Retrait demandé avec succès</span>";
+      document.getElementById("balance").textContent = data.balance - amount;
+      document.getElementById("withdrawn").textContent = (data.totalWithdrawn || 0) + amount;
+    }
+  </script>
+</body>
+    </html>
+  
