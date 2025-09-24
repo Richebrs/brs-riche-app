@@ -3,156 +3,172 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BRS Riche - Retrait</title>
+<title>Demande de Retrait - BRS Riche</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
-  body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-  .card { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-width: 400px; width: 100%; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
+  .withdraw-card { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.1); width: 350px; }
   h2 { text-align: center; color: #333; margin-bottom: 20px; }
-  label { display: block; margin-top: 10px; color: #555; font-weight: bold; }
-  input, select, button { width: 100%; padding: 10px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
-  button { background: #4caf50; color: #fff; font-weight: bold; cursor: pointer; transition: 0.3s; }
-  button:hover { background: #45a049; }
-  .info { margin: 10px 0; font-weight: bold; color: #333; }
-  .success { color: green; font-weight: bold; margin-top: 10px; text-align: center; }
-  .error { color: red; font-weight: bold; margin-top: 10px; text-align: center; }
-  .help { color: #888; font-size: 14px; margin-top: 5px; }
+  .field { margin-bottom: 15px; }
+  label { display: block; margin-bottom: 5px; color: #555; }
+  input, select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
+  .summary { background: #f0f8ff; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
+  button { width: 100%; padding: 10px; background: #28a745; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+  button:hover { background: #218838; }
+  .message { text-align: center; margin-top: 15px; font-weight: bold; }
+  .error { color: #dc3545; }
+  .success { color: #28a745; }
 </style>
 </head>
 <body>
 
-<div class="card">
+<div class="withdraw-card">
   <h2>💸 Demande de Retrait</h2>
+  <div class="summary">
+    <p>💰 Solde disponible : <span id="balance">0</span> USDT</p>
+    <p>📈 Gains totaux : <span id="totalGains">0</span> USDT</p>
+    <p>🏦 Déjà retiré : <span id="totalWithdrawn">0</span> USDT</p>
+  </div>
 
-  <div class="info">💰 Solde disponible : <span id="balance">0</span> USDT</div>
-  <div class="info">📈 Gains totaux : <span id="gains">0</span> USDT</div>
-  <div class="info">🏦 Déjà retiré : <span id="withdrawn">0</span> USDT</div>
+  <div class="field">
+    <label for="amount">Montant à retirer (USDT)</label>
+    <input type="number" id="amount" placeholder="Ex: 5" min="3">
+    <small>Minimum de retrait : 3 USDT</small>
+  </div>
 
-  <label>Montant à retirer (USDT) :</label>
-  <input type="number" id="amount" min="3" placeholder="Ex: 5">
-  <div class="help">Minimum de retrait : 3 USDT</div>
+  <div class="field">
+    <label for="network">Réseau</label>
+    <select id="network">
+      <option value="TRC20">USDT TRC20</option>
+      <option value="BEP20">USDT BEP20</option>
+    </select>
+  </div>
 
-  <div class="info">Frais (5%) : <span id="fees">0</span> USDT</div>
-  <div class="info">Net à recevoir : <span id="net">0</span> USDT</div>
+  <div class="field">
+    <label for="address">Adresse de retrait</label>
+    <input type="text" id="address" placeholder="Votre adresse USDT">
+  </div>
 
-  <label>Réseau :</label>
-  <select id="network">
-    <option value="TRC20">USDT TRC20</option>
-    <option value="BEP20">USDT BEP20</option>
-  </select>
+  <div class="summary">
+    <p>Frais (5%) : <span id="fee">0</span> USDT</p>
+    <p>Net à recevoir : <span id="net">0</span> USDT</p>
+  </div>
 
-  <label>Adresse de retrait :</label>
-  <input type="text" id="walletAddress" placeholder="Votre adresse USDT">
-  <div class="help">Ex: TXXXX ou BSC address selon le réseau choisi</div>
-
-  <button onclick="requestWithdraw()">📤 Demander un retrait</button>
-  <p id="message"></p>
+  <button id="withdrawBtn">📤 Demander un retrait</button>
+  <div class="message" id="message"></div>
 </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
 <script>
-  // Config Firebase (BRS-Riche-2)
+  // Config Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
     authDomain: "brs-riche-2.firebaseapp.com",
     projectId: "brs-riche-2",
     storageBucket: "brs-riche-2.appspot.com",
     messagingSenderId: "313874599780",
-    appId: "1:313874599780:web:xxxxxx"
+    appId: "1:313874599780:web:example"
   };
-
   firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
   const db = firebase.firestore();
-  let currentUserDoc;
+  const auth = firebase.auth();
 
-  // Récupération utilisateur connecté
-  auth.onAuthStateChanged(async (user) => {
-    if (user) {
-      try {
-        const docRef = db.collection("users").doc(user.uid);
-        const docSnap = await docRef.get();
-        if (docSnap.exists) {
-          currentUserDoc = docRef;
-          const data = docSnap.data();
-          const balance = Number(data.balance) || 0;
-          const totalGains = Number(data.totalGains) || 0;
-          const totalWithdrawn = Number(data.totalWithdrawn) || 0;
+  let userId;
+  let balance = 0;
 
-          document.getElementById("balance").textContent = balance.toFixed(2);
-          document.getElementById("gains").textContent = totalGains.toFixed(2);
-          document.getElementById("withdrawn").textContent = totalWithdrawn.toFixed(2);
-        } else {
-          document.getElementById("message").innerHTML = "<span class='error'>⚠ Utilisateur introuvable</span>";
-        }
-      } catch (err) {
-        console.error(err);
-        document.getElementById("message").innerHTML = "<span class='error'>⚠ Erreur lors de la récupération des données</span>";
-      }
-    } else {
-      document.getElementById("message").innerHTML = "<span class='error'>⚠ Veuillez vous connecter</span>";
+  auth.onAuthStateChanged(async user => {
+    if (!user) {
+      document.getElementById('message').textContent = 'Veuillez vous connecter.';
+      document.getElementById('message').classList.add('error');
+      return;
+    }
+    userId = user.uid;
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (userDoc.exists) {
+      const data = userDoc.data();
+      balance = data.balance || 0;
+      document.getElementById('balance').textContent = balance.toFixed(2);
+      document.getElementById('totalGains').textContent = (data.totalGains || 0).toFixed(2);
+      document.getElementById('totalWithdrawn').textContent = (data.totalWithdrawn || 0).toFixed(2);
     }
   });
 
-  // Calcul frais et net
-  document.getElementById("amount").addEventListener("input", () => {
-    const amount = parseFloat(document.getElementById("amount").value) || 0;
-    const fees = amount * 0.05;
-    const net = amount - fees;
-    document.getElementById("fees").textContent = fees.toFixed(2);
-    document.getElementById("net").textContent = net > 0 ? net.toFixed(2) : 0;
+  const amountInput = document.getElementById('amount');
+  const feeEl = document.getElementById('fee');
+  const netEl = document.getElementById('net');
+
+  amountInput.addEventListener('input', () => {
+    const amount = parseFloat(amountInput.value) || 0;
+    const fee = amount * 0.05;
+    feeEl.textContent = fee.toFixed(2);
+    netEl.textContent = (amount - fee).toFixed(2);
   });
 
-  // Demande de retrait
-  async function requestWithdraw() {
-    const amount = parseFloat(document.getElementById("amount").value);
-    const walletAddress = document.getElementById("walletAddress").value.trim();
-    const network = document.getElementById("network").value;
-    const fees = amount * 0.05;
-    const net = amount - fees;
+  document.getElementById('withdrawBtn').addEventListener('click', async () => {
+    const amount = parseFloat(amountInput.value);
+    const network = document.getElementById('network').value;
+    const address = document.getElementById('address').value.trim();
+    const messageEl = document.getElementById('message');
+
+    messageEl.textContent = '';
+    messageEl.classList.remove('error', 'success');
 
     if (!amount || amount < 3) {
-      document.getElementById("message").innerHTML = "<span class='error'>⚠ Montant minimum : 3 USDT</span>";
+      messageEl.textContent = 'Le montant doit être au moins 3 USDT.';
+      messageEl.classList.add('error');
       return;
     }
-    if (!walletAddress) {
-      document.getElementById("message").innerHTML = "<span class='error'>⚠ Veuillez saisir une adresse de retrait</span>";
+    if (amount > balance) {
+      messageEl.textContent = 'Solde insuffisant.';
+      messageEl.classList.add('error');
+      return;
+    }
+    if (!address) {
+      messageEl.textContent = 'Veuillez entrer votre adresse de retrait.';
+      messageEl.classList.add('error');
       return;
     }
 
-    const docSnap = await currentUserDoc.get();
-    const data = docSnap.data();
-    if (data.balance < amount) {
-      document.getElementById("message").innerHTML = "<span class='error'>❌ Solde insuffisant</span>";
-      return;
+    try {
+      const fee = amount * 0.05;
+      const net = amount - fee;
+
+      // Créer un document de retrait dans Firestore
+      await db.collection('deposits').add({
+        userId: userId,
+        amount: amount,
+        fee: fee,
+        net: net,
+        network: network,
+        address: address,
+        status: 'pending',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Mettre à jour le solde
+      await db.collection('users').doc(userId).update({
+        balance: balance - amount,
+        totalWithdrawn: firebase.firestore.FieldValue.increment(amount)
+      });
+
+      messageEl.textContent = `✅ Retrait de ${net.toFixed(2)} USDT demandé avec succès !`;
+      messageEl.classList.add('success');
+
+      // Mise à jour affichage
+      balance -= amount;
+      document.getElementById('balance').textContent = balance.toFixed(2);
+      amountInput.value = '';
+      feeEl.textContent = '0';
+      netEl.textContent = '0';
+    } catch (err) {
+      console.error(err);
+      messageEl.textContent = 'Erreur lors de la demande.';
+      messageEl.classList.add('error');
     }
-
-    // Déduire le solde et enregistrer le retrait
-    await currentUserDoc.update({
-      balance: data.balance - amount,
-      totalWithdrawn: (data.totalWithdrawn || 0) + amount
-    });
-
-    await db.collection("withdrawals").add({
-      userId: auth.currentUser.uid,
-      username: data.username,
-      amount: amount,
-      fees: fees,
-      net: net,
-      wallet: walletAddress,
-      network: network,
-      status: "pending",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    document.getElementById("message").innerHTML = "<span class='success'>✅ Retrait demandé avec succès</span>";
-    document.getElementById("balance").textContent = (data.balance - amount).toFixed(2);
-    document.getElementById("withdrawn").textContent = ((data.totalWithdrawn || 0) + amount).toFixed(2);
-  }
+  });
 </script>
+
 </body>
-  </html>
+      </html>
   
