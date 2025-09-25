@@ -5,32 +5,38 @@
 <title>Admin Retraits - BRS RICHE</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <style>
-body { font-family: 'Segoe UI', sans-serif; margin:0; padding:0; background:#f4f7fb; display:none; text-align:center; }
-header { background:#0d47a1; color:#fff; padding:20px; }
+body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; display:none; text-align:center; }
+header { background:#0d47a1; color:#fff; padding:20px; position:relative; }
 header h1 { margin:0; font-size:1.6em; }
-header a { color:#fff; text-decoration:none; font-size:0.95em; display:inline-block; margin-top:8px; }
-.container { margin:20px auto; max-width:900px; background:#fff; padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15); text-align:left; overflow-x:auto; }
-.table { width:100%; border-collapse:collapse; }
-.table th, .table td { padding:10px; border:1px solid #ccc; text-align:center; font-size:0.9em; }
-.button { padding:6px 12px; border:none; border-radius:8px; cursor:pointer; color:#fff; }
-.approve { background:green; }
-.reject { background:red; }
-.msg { margin:10px 0; font-size:0.95em; color:#d32f2f; }
-@media screen and (max-width:600px){ .table th,.table td{font-size:0.8em;padding:6px;} header h1{font-size:1.3em;} }
+.container { margin:30px auto; max-width:700px; background:#fff; padding:30px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15); }
+table { width:100%; border-collapse:collapse; margin-top:20px; }
+th, td { padding:10px; border:1px solid #ccc; font-size:0.95em; text-align:center; }
+th { background:#0d47a1; color:#fff; }
+button { padding:6px 12px; font-size:0.9em; color:#fff; border:none; border-radius:8px; cursor:pointer; }
+.approve { background:#4caf50; }
+.reject { background:#f44336; }
+.msg { margin:10px 0; font-size:0.95em; }
+.success { color:green; }
+.error { color:red; }
+.back-btn { margin-top:15px; display:inline-block; text-decoration:none; color:#0d47a1; font-weight:bold; }
 </style>
 </head>
 <body>
 <header>
-  <h1>💼 Admin robe Retraits</h1>
-  <a href="dashboard.html">⬅ Retour au Dashboard</a>
+  <h1>💼 Admin oui Retraits</h1>
+  <a href="dashboard.html" class="back-btn">⬅ Retour au Dashboard</a>
 </header>
+
 <div class="container">
   <p class="msg" id="message"></p>
-  <table class="table">
+  <table>
     <thead>
       <tr>
         <th>Utilisateur</th>
@@ -64,90 +70,93 @@ const db = firebase.firestore();
 const messageEl = document.getElementById("message");
 const withdrawalsListEl = document.getElementById("withdrawals-list");
 
-// 🔹 Auth Admin
-auth.onAuthStateChanged(async user => {
+// 🔹 Auth listener
+auth.onAuthStateChanged(user => {
   if (!user) return window.location.href = "login.html";
 
-  try {
-    const doc = await db.collection("users").doc(user.uid).get();
-    if (!doc.exists) throw new Error("Compte introuvable");
-    const role = (doc.data().role || "").toLowerCase();
-    if (role !== "admin") throw new Error("Admin uniquement");
-    loadWithdrawals();
-  } catch (err) {
-    alert(`Accès refusé : ${err.message}`);
-    window.location.href = "dashboard.html";
-  }
-});
+  // Vérifier si admin
+  db.collection("users").doc(user.uid).get().then(doc => {
+    if (!doc.exists || doc.data().role !== "admin") {
+      alert("Accès refusé. Admin uniquement.");
+      return window.location.href = "dashboard.html";
+    }
 
-// 🔹 Charger les retraits
-function loadWithdrawals() {
-  db.collection("withdrawals")
-    .orderBy("createdAt","desc")
-    .onSnapshot(snapshot => {
+    // Charger toutes les demandes
+    db.collection("withdrawals").orderBy("createdAt","desc").onSnapshot(snapshot => {
       withdrawalsListEl.innerHTML = "";
       snapshot.forEach(doc => {
         const tx = doc.data();
         const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
-        const status = tx.status || "Pending";
-        const fee = tx.fee ?? (tx.amount*0.05).toFixed(2);
-        const netReceived = tx.netReceived ?? (tx.amount - fee).toFixed(2);
-
         withdrawalsListEl.innerHTML += `
-          <tr>
+          <tr id="row-${doc.id}">
             <td>${tx.userId}</td>
-            <td>${tx.amount} USDT</td>
-            <td>${fee} USDT</td>
-            <td>${netReceived} USDT</td>
+            <td>${tx.amount}</td>
+            <td>${tx.fee}</td>
+            <td>${tx.netReceived}</td>
             <td>${tx.network}</td>
             <td>${tx.address}</td>
             <td>${date}</td>
-            <td id="status-${doc.id}">${status}</td>
+            <td id="status-${doc.id}">${tx.status}</td>
             <td>
-              ${status.toLowerCase() === "pending" ? `
-              <button class="button approve" onclick="approve('${doc.id}',${tx.amount})">✅</button>
-              <button class="button reject" onclick="reject('${doc.id}',${tx.amount},'${tx.userId}')">❌</button>` : "-"}
+              ${tx.status === "Pending" ? `
+              <button class="approve" onclick="approve('${doc.id}', ${tx.amount}, '${tx.userId}')">✅ Approve</button>
+              <button class="reject" onclick="reject('${doc.id}', ${tx.amount}, '${tx.userId}')">❌ Reject</button>` : ''}
             </td>
-          </tr>
-        `;
+          </tr>`;
       });
-    }, err => {
-      messageEl.innerText = `❌ Erreur snapshot : ${err.message}`;
     });
-}
+  });
+});
 
-// 🔹 Approve
-async function approve(docId, amount){
+// 🔹 Approve retrait
+async function approve(docId, amount, userId){
   try {
     const txRef = db.collection("withdrawals").doc(docId);
     await txRef.update({status:"Approved"});
-    messageEl.innerText = `✅ Retrait approuvé pour ${amount} USDT`;
-    document.getElementById(`status-${docId}`).innerText = "Approved";
-  } catch(e) {
+
+    messageEl.innerText = "✅ Retrait approuvé.";
+    messageEl.className = "msg success";
+
+    // Débiter le wallet si pas encore débité (optionnel, selon logique front)
+    const userRef = db.collection("users").doc(userId);
+    const userSnap = await userRef.get();
+    const wallet = userSnap.data().wallet || {};
+    await userRef.update({
+      "wallet.balance": (wallet.balance ?? 0) - amount,
+      "wallet.totalWithdrawn": (wallet.totalWithdrawn ?? 0) + amount
+    });
+
+  } catch(e){
     messageEl.innerText = `❌ Erreur : ${e.message}`;
+    messageEl.className = "msg error";
+    console.error(e);
   }
 }
 
-// 🔹 Reject
+// 🔹 Reject retrait
 async function reject(docId, amount, userId){
   try {
     const txRef = db.collection("withdrawals").doc(docId);
-    const walletRef = db.collection("wallets").doc(userId);
+    await txRef.update({status:"Rejected"});
 
-    await db.runTransaction(async t => {
-      const walletDoc = await t.get(walletRef);
-      const balance = walletDoc.exists ? (walletDoc.data().balance || 0) : 0;
-      t.update(txRef, {status:"Rejected"});
-      t.set(walletRef, {balance: balance + amount}, {merge:true});
+    messageEl.innerText = "❌ Retrait rejeté.";
+    messageEl.className = "msg success";
+
+    // Optionnel : rembourser le montant si déjà débité
+    const userRef = db.collection("users").doc(userId);
+    const userSnap = await userRef.get();
+    const wallet = userSnap.data().wallet || {};
+    await userRef.update({
+      "wallet.balance": (wallet.balance ?? 0) + amount,
+      "wallet.totalWithdrawn": (wallet.totalWithdrawn ?? 0) - amount
     });
 
-    messageEl.innerText = `❌ Retrait refusé, ${amount} USDT remboursé`;
-    document.getElementById(`status-${docId}`).innerText = "Rejected";
-  } catch(e) {
+  } catch(e){
     messageEl.innerText = `❌ Erreur : ${e.message}`;
+    messageEl.className = "msg error";
+    console.error(e);
   }
 }
 </script>
 </body>
-  </html>
-  
+</html>
