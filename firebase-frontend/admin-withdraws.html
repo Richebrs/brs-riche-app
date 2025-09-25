@@ -5,9 +5,6 @@
 <title>Admin Retraits - BRS RICHE</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
 body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; display:none; text-align:center; }
 header { background:#0d47a1; color:#fff; padding:20px; }
@@ -20,12 +17,16 @@ header h1 { margin:0; font-size:1.6em; }
 .reject { background:red; }
 .msg { margin:10px 0; font-size:0.95em; }
 </style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <header>
   <h1>💼 Admin Retraits</h1>
   <a href="dashboard.html" style="color:#fff; text-decoration:none;">⬅ Retour au Dashboard</a>
 </header>
+
 <div class="container">
   <p class="msg" id="message"></p>
   <table class="table">
@@ -45,6 +46,7 @@ header h1 { margin:0; font-size:1.6em; }
     <tbody id="withdrawals-list"></tbody>
   </table>
 </div>
+
 <script>
 document.body.style.display = "block";
 
@@ -87,14 +89,14 @@ auth.onAuthStateChanged(user => {
 // 🔹 Charger les retraits
 function loadWithdrawals() {
   db.collectionGroup("withdrawals")
-    .orderBy("createdAt","desc") // Firestore ignore les docs sans createdAt
+    .orderBy("createdAt","desc")
     .onSnapshot(snapshot => {
       withdrawalsListEl.innerHTML = "";
       snapshot.forEach(doc => {
         const tx = doc.data();
-        // récupère le userId de façon sûre
-        let userId = "—";
-        try { userId = doc.ref.parent.parent.parent.id; } catch(e) {}
+
+        // ✅ Récupérer correctement l'UID de l'utilisateur
+        const userId = doc.ref.parent.parent.id;
 
         const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
         const status = tx.status || "Pending";
@@ -123,21 +125,21 @@ function loadWithdrawals() {
 }
 
 // 🔹 Approve
-function approve(userId, docId, amount) {
+function approve(userId, docId, amount){
   const txRef = db.collection("transactions").doc(userId).collection("withdrawals").doc(docId);
   txRef.update({status:"Approved"}).then(()=>{
     messageEl.innerText = `✅ Retrait approuvé pour ${amount} USDT`;
     document.getElementById(`status-${docId}`).innerText = "Approved";
-  }).catch(e=>{
+  }).catch(e => {
     messageEl.innerText = `❌ Erreur : ${e.message}`;
   });
 }
 
 // 🔹 Reject
-function reject(userId, docId, amount) {
+function reject(userId, docId, amount){
   const txRef = db.collection("transactions").doc(userId).collection("withdrawals").doc(docId);
   const userRef = db.collection("users").doc(userId);
-
+  
   db.runTransaction(async t => {
     const userDoc = await t.get(userRef);
     const wallet = userDoc.data().wallet || {};
@@ -147,11 +149,10 @@ function reject(userId, docId, amount) {
   }).then(()=>{
     messageEl.innerText = `❌ Retrait refusé, ${amount} USDT remboursé à l'utilisateur`;
     document.getElementById(`status-${docId}`).innerText = "Rejected";
-  }).catch(e=>{
+  }).catch(e => {
     messageEl.innerText = `❌ Erreur : ${e.message}`;
   });
 }
 </script>
 </body>
-                                                                                            </html>
-          
+</html>
