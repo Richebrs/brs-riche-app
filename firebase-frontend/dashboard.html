@@ -161,11 +161,11 @@ auth.onAuthStateChanged(user=>{
         document.getElementById("balance-available").innerText = `$${available.toFixed(2)}`;
         document.getElementById("balance-withdrawn").innerText = `$${withdrawn.toFixed(2)}`;
         document.getElementById("balance-total").innerText = `$${total.toFixed(2)}`;
-
-        // Menu admin visible uniquement si role = "Admis"
-        if(data.role === "Admis"){
-          document.getElementById("admin-menu").style.display = "grid";
-        }
+       
+        // Menu admin visible uniquement si role = "admin"
+if(data.role && data.role.toLowerCase() === "admin"){
+  document.getElementById("admin-menu").style.display = "grid";
+}
       }
     });
   } else {
