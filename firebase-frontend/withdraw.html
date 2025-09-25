@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -65,6 +66,7 @@ button:hover { background:#e68900; }
     <ul class="history-list" id="history-list"></ul>
   </div>
 </div>
+
 <script>
 document.body.style.display = "block";
 
@@ -111,7 +113,7 @@ auth.onAuthStateChanged(user => {
     }
   });
 
-  // Charger historique depuis nouvelle collection plate
+  // Charger historique depuis collection plate
   db.collection("withdrawals")
     .where("userId","==",user.uid)
     .orderBy("createdAt","desc").limit(10)
@@ -183,6 +185,7 @@ document.getElementById("withdraw-btn").addEventListener("click", async () => {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
+    // 🔹 Mettre à jour le wallet
     const userRef = db.collection("users").doc(auth.currentUser.uid);
     await userRef.update({
       "wallet.balance": balanceAvailable - amt,
@@ -203,5 +206,5 @@ document.getElementById("withdraw-btn").addEventListener("click", async () => {
 });
 </script>
 </body>
-</html>
-
+  </html>
+  
