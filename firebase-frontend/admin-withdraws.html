@@ -2,58 +2,75 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Admin Retraits - BRS Riche</title>
+<title>Admin - Retraits</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<!-- Firebase -->
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <style>
-body {
-  font-family:'Segoe UI',sans-serif; margin:0; padding:0;
-  background:#f4f7fb; color:#333; display:none; text-align:center;
-}
-header {
-  background:#0d47a1; color:#fff; padding:20px; position:relative;
-}
+body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; display:none; }
+header { background:#0d47a1; color:#fff; padding:20px; text-align:center; position:relative; }
 header h1 { margin:0; font-size:1.6em; }
-.container {
-  margin:20px auto; max-width:600px; background:#fff;
-  padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15);
+.back-btn { position:absolute; left:15px; top:22px; color:#fff; text-decoration:none; font-weight:bold; }
+
+.container { max-width:1000px; margin:20px auto; padding:0 15px; }
+
+.table { width:100%; border-collapse:collapse; margin-top:20px; }
+.table th, .table td { padding:10px; text-align:center; border-bottom:1px solid #ddd; word-break:break-word; }
+.table th { background:#0d47a1; color:#fff; border-radius:8px; }
+button { padding:8px 12px; border:none; border-radius:8px; cursor:pointer; color:#fff; transition:0.2s; }
+button.approve { background:green; }
+button.approve:hover { background:#006400; }
+button.reject { background:red; }
+button.reject:hover { background:#8b0000; }
+
+.msg { margin:10px 0; font-size:0.95em; text-align:center; }
+.msg.success { color:green; }
+.msg.error { color:red; }
+
+.status-pending { color:#f0ad4e; font-weight:bold; }
+.status-approved { color:green; font-weight:bold; }
+.status-rejected { color:red; font-weight:bold; }
+
+.copy-btn { background:#0d47a1; padding:5px 8px; margin-left:5px; font-size:0.8em; border-radius:6px; }
+.copy-btn:hover { background:#08306b; }
+
+@media(max-width:768px){
+  .table th, .table td { font-size:0.85em; padding:6px; }
+  header h1 { font-size:1.3em; }
 }
-.history { margin-top:20px; text-align:center; }
-.history h3 { margin-bottom:10px; color:#0d47a1; }
-.history-list { list-style:none; padding:0; max-height:400px; overflow-y:auto; }
-.history-list li {
-  margin:5px 0; padding:10px; border-radius:8px;
-  font-size:0.95em; display:flex; flex-direction:column;
-  align-items:flex-start;
-}
-.status-pending { background:#fff3cd; color:#856404; }
-.status-success { background:#d4edda; color:#155724; }
-.status-failed { background:#f8d7da; color:#721c24; }
-button.action-btn { margin-top:5px; padding:5px 10px; border:none; border-radius:8px; cursor:pointer; color:#fff; }
-.btn-approve { background:#28a745; }
-.btn-refuse { background:#dc3545; }
-.copy-btn { cursor:pointer; color:#0d47a1; margin-left:5px; }
-.user-email { font-weight:bold; margin-bottom:5px; }
 </style>
 </head>
 <body>
 <header>
-  <h1>💼 Admin f- Retraits</h1>
+  <h1>Admin - Gestion des Retraits</h1>
+  <a href="dashboard.html" class="back-btn">⬅ Retour</a>
 </header>
 
 <div class="container">
-  <div class="history">
-    <h3>Historique des retraits</h3>
-    <ul class="history-list" id="history-list"></ul>
-  </div>
+  <p class="msg" id="message"></p>
+  <table class="table" id="withdrawals-table">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Montant</th>
+        <th>Frais</th>
+        <th>Net</th>
+        <th>Réseau</th>
+        <th>Adresse <br><small>(copier)</small></th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 </div>
 
 <script>
-document.body.style.display = "block";
+document.body.style.display="block";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
@@ -64,67 +81,99 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-const historyListEl = document.getElementById("history-list");
+const messageEl = document.getElementById("message");
+const tableBody = document.querySelector("#withdrawals-table tbody");
 
-auth.onAuthStateChanged(async user => {
-  if (!user) return window.location.href="login.html";
+auth.onAuthStateChanged(async user=>{
+  if(!user) return window.location.href="login.html";
 
   const userDoc = await db.collection("users").doc(user.uid).get();
   if(!userDoc.exists || userDoc.data().role !== "admin"){
-    alert("Accès refusé"); window.location.href="login.html"; return;
+    alert("Accès refusé"); return;
   }
 
-  db.collection("withdrawals").orderBy("createdAt","desc")
-    .onSnapshot(async snapshot=>{
-      historyListEl.innerHTML="";
-      for(const doc of snapshot.docs){
-        const tx = doc.data();
-        const status = tx.status || "Pending";
-        let statusClass = status==="Pending"?"status-pending":
-                          status==="Success"?"status-success":"status-failed";
-        let userData=null;
-        try{ const uDoc=await db.collection("users").doc(tx.userId).get(); if(uDoc.exists) userData=uDoc.data(); } catch{}
-        const email = userData?.email || "—";
-        const li = document.createElement("li");
-        li.className=statusClass;
-        li.innerHTML=`<span class="user-email">${email}</span>
-          <span>${tx.amount} USDT | ${tx.network} | ${tx.address}<i class="copy-btn" onclick="navigator.clipboard.writeText('${tx.address}')"><i class="fa fa-copy"></i></i></span>
-          <span>Status: ${status}</span>`;
+  loadWithdrawals();
+});
 
-        if(status==="Pending"){
-          const approveBtn=document.createElement("button");
-          approveBtn.textContent="✔ Valider";
-          approveBtn.className="action-btn btn-approve";
-          approveBtn.onclick=async ()=>{
-            try{
-              await doc.ref.update({status:"Success"});
-              alert("Retrait validé !");
-            }catch(e){alert("Erreur : "+e.message);}
-          };
-          const refuseBtn=document.createElement("button");
-          refuseBtn.textContent="✖ Refuser";
-          refuseBtn.className="action-btn btn-refuse";
-          refuseBtn.onclick=async ()=>{
-            try{
-              await doc.ref.update({status:"Refusé"});
-              // remboursement automatique
-              if(userData?.wallet?.balance!==undefined){
-                await db.collection("users").doc(tx.userId).update({
-                  "wallet.balance": userData.wallet.balance + tx.amount,
-                  "wallet.totalWithdrawn": userData.wallet.totalWithdrawn - tx.amount
-                });
-              }
-              alert("Retrait refusé et remboursé !");
-            }catch(e){alert("Erreur : "+e.message);}
-          };
-          li.appendChild(approveBtn); li.appendChild(refuseBtn);
-        }
-        historyListEl.appendChild(li);
+function loadWithdrawals(){
+  db.collection("withdrawals").orderBy("createdAt","desc").onSnapshot(async snapshot=>{
+    tableBody.innerHTML="";
+    for(const doc of snapshot.docs){
+      const tx = doc.data();
+      const userSnap = await db.collection("users").doc(tx.userId).get();
+      const email = userSnap.exists ? userSnap.data().email : "—";
+      const tr = document.createElement("tr");
+
+      let statusClass="", statusIcon="";
+      if(tx.status==="Pending"){ statusClass="status-pending"; statusIcon="⏳"; }
+      else if(tx.status==="Approved"){ statusClass="status-approved"; statusIcon="✅"; }
+      else { statusClass="status-rejected"; statusIcon="❌"; }
+
+      tr.innerHTML=`
+        <td>${email}</td>
+        <td>${tx.amount.toFixed(2)}</td>
+        <td>${tx.fee.toFixed(2)}</td>
+        <td>${tx.netReceived.toFixed(2)}</td>
+        <td>${tx.network}</td>
+        <td>${tx.address} <button class="copy-btn" data-addr="${tx.address}">📋</button></td>
+        <td class="${statusClass}">${statusIcon} ${tx.status}</td>
+        <td>
+          ${tx.status==="Pending"?`
+          <button class="approve" data-id="${doc.id}">✅ Valider</button>
+          <button class="reject" data-id="${doc.id}">❌ Refuser</button>`:"-"}
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    }
+
+    document.querySelectorAll(".approve").forEach(btn=>{
+      btn.addEventListener("click",()=>processWithdrawal(btn.dataset.id,true));
+    });
+    document.querySelectorAll(".reject").forEach(btn=>{
+      btn.addEventListener("click",()=>processWithdrawal(btn.dataset.id,false));
+    });
+    document.querySelectorAll(".copy-btn").forEach(btn=>{
+      btn.addEventListener("click",()=>navigator.clipboard.writeText(btn.dataset.addr));
+    });
+  });
+}
+
+async function processWithdrawal(id,approve){
+  try{
+    const txRef = db.collection("withdrawals").doc(id);
+    const txDoc = await txRef.get();
+    if(!txDoc.exists) return;
+
+    const tx = txDoc.data();
+    if(tx.status!=="Pending") return;
+
+    const userRef = db.collection("users").doc(tx.userId);
+
+    await db.runTransaction(async t=>{
+      const userSnap = await t.get(userRef);
+      if(!userSnap.exists) throw "Utilisateur introuvable";
+      const wallet = userSnap.data().wallet || {};
+
+      if(approve){
+        const newBalance = (wallet.balance||0) - tx.amount;
+        if(newBalance<0) throw "Solde insuffisant";
+        t.update(userRef,{ "wallet.balance": newBalance, "wallet.totalWithdrawn": (wallet.totalWithdrawn||0)+tx.amount });
+        t.update(txRef,{ status:"Approved" });
+        messageEl.innerText="✅ Retrait validé"; messageEl.className="msg success";
+      } else {
+        // remboursement automatique
+        const refundBalance = (wallet.balance||0) + tx.amount;
+        t.update(userRef,{ "wallet.balance": refundBalance });
+        t.update(txRef,{ status:"Rejected" });
+        messageEl.innerText="❌ Retrait refusé et remboursé"; messageEl.className="msg error";
       }
     });
-});
+  } catch(e){
+    console.error(e);
+    messageEl.innerText=`❌ Erreur: ${e}`; messageEl.className="msg error";
+  }
+}
 </script>
 </body>
-</html>
-
+  </html>
   
