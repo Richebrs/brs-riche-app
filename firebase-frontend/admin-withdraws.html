@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Admin Retraits - BRS RICHE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f4f7fb;
+  display: none;
+  text-align: center;
+}
+header {
+  background: #0d47a1;
+  color: #fff;
+  padding: 20px;
+}
+header h1 {
+  margin: 0;
+  font-size: 1.6em;
+}
+header a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.95em;
+  display: inline-block;
+  margin-top: 8px;
+}
+.container {
+  margin: 20px auto;
+  max-width: 900px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+  text-align: left;
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th, .table td {
+  padding: 10px;
+  border: 1px solid #ccc;
+  text-align: center;
+  font-size: 0.9em;
+}
+.button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #fff;
+}
+.approve { background: green; }
+.reject { background: red; }
+.msg { margin: 10px 0; font-size: 0.95em; color: #d32f2f; }
+@media screen and (max-width: 600px) {
+  .table th, .table td { font-size: 0.8em; padding: 6px; }
+  header h1 { font-size: 1.3em; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>💼 Admin Retraits</h1>
+  <a href="dashboard.html">⬅ Retour au Dashboard</a>
+</header>
+<div class="container">
+  <p class="msg" id="message"></p>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Utilisateur</th>
+        <th>Montant</th>
+        <th>Frais</th>
+        <th>Net</th>
+        <th>Réseau</th>
+        <th>Adresse</th>
+        <th>Date</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="withdrawals-list"></tbody>
+  </table>
+</div>
+
+<script>
+document.body.style.display = "block";
+
+// 🔹 Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+  authDomain: "brs-riche-2.firebaseapp.com",
+  projectId: "brs-riche-2"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+const messageEl = document.getElementById("message");
+const withdrawalsListEl = document.getElementById("withdrawals-list");
+
+// 🔹 Auth Admin
+auth.onAuthStateChanged(user => {
+  if (!user) return window.location.href = "login.html";
+
+  db.collection("users").doc(user.uid).get().then(doc => {
+    if (!doc.exists) {
+      alert("Accès refusé : compte introuvable");
+      return window.location.href = "dashboard.html";
+    }
+
+    const role = (doc.data().role || "").toLowerCase();
+    if (role !== "admin") {
+      alert("Accès refusé : Admin uniquement");
+      return window.location.href = "dashboard.html";
+    }
+
+    // ✅ L’utilisateur est admin
+    loadWithdrawals();
+  }).catch(err => {
+    messageEl.innerText = `❌ Erreur Firestore : ${err.message}`;
+  });
+});
+
+// 🔹 Charger les retraits
+function loadWithdrawals() {
+  db.collectionGroup("withdrawals")
+    .orderBy("createdAt","desc")
+    .onSnapshot(snapshot => {
+      withdrawalsListEl.innerHTML = "";
+      snapshot.forEach(doc => {
+        const tx = doc.data();
+        const userId = doc.ref.parent.parent.id;
+        const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
+        const status = tx.status || "Pending";
+        const fee = tx.fee ?? (tx.amount*0.05).toFixed(2);
+        const netReceived = tx.netReceived ?? (tx.amount - fee).toFixed(2);
+
+        withdrawalsListEl.innerHTML += `
+          <tr>
+            <td>${userId}</td>
+            <td>${tx.amount} USDT</td>
+            <td>${fee} USDT</td>
+            <td>${netReceived} USDT</td>
+            <td>${tx.network}</td>
+            <td>${tx.address}</td>
+            <td>${date}</td>
+            <td id="status-${doc.id}">${status}</td>
+            <td>
+              ${status.toLowerCase() === "pending" ? `
+              <button class="button approve" onclick="approve('${userId}','${doc.id}',${tx.amount})">✅</button>
+              <button class="button reject" onclick="reject('${userId}','${doc.id}',${tx.amount})">❌</button>` : "-"}
+            </td>
+          </tr>
+        `;
+      });
+    }, err => {
+      messageEl.innerText = `❌ Erreur snapshot : ${err.message}`;
+    });
+}
+
+// 🔹 Approve
+function approve(userId, docId, amount){
+  const txRef = db.collection("transactions").doc(userId).collection("withdrawals").doc(docId);
+  txRef.update({status:"Approved"}).then(()=>{
+    messageEl.innerText = `✅ Retrait approuvé pour ${amount} USDT`;
+    document.getElementById(`status-${docId}`).innerText = "Approved";
+  }).catch(e => {
+    messageEl.innerText = `❌ Erreur : ${e.message}`;
+  });
+}
+
+// 🔹 Reject
+function reject(userId, docId, amount){
+  const txRef = db.collection("transactions").doc(userId).collection("withdrawals").doc(docId);
+  const userRef = db.collection("users").doc(userId);
+
+  db.runTransaction(async t => {
+    const userDoc = await t.get(userRef);
+    const wallet = userDoc.data().wallet || {};
+    const newBalance = (wallet.balance ?? 0) + amount;
+    t.update(txRef, {status:"Rejected"});
+    t.update(userRef, {"wallet.balance": newBalance});
+  }).then(()=>{
+    messageEl.innerText = `❌ Retrait refusé, ${amount} USDT remboursé à l'utilisateur`;
+    document.getElementById(`status-${docId}`).innerText = "Rejected";
+  }).catch(e => {
+    messageEl.innerText = `❌ Erreur : ${e.message}`;
+  });
+}
+</script>
+</body>
+                                                                                 </html>
+  
