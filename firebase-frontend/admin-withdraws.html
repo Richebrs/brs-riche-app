@@ -71,11 +71,21 @@ auth.onAuthStateChanged(user => {
   if (!user) return window.location.href = "login.html";
 
   db.collection("users").doc(user.uid).get().then(doc => {
-    if (!doc.exists || doc.data().role !== "admin") {
+    if (!doc.exists) {
+      alert("Accès refusé : compte introuvable");
+      return window.location.href = "dashboard.html";
+    }
+
+    const role = (doc.data().role || "").toLowerCase();
+    if (role !== "admin") {
       alert("Accès refusé : Admin uniquement");
       return window.location.href = "dashboard.html";
     }
+
+    // ✅ Ici l’utilisateur est bien admin
     loadWithdrawals();
+  }).catch(err => {
+    messageEl.innerText = `❌ Erreur Firestore : ${err.message}`;
   });
 });
 
@@ -87,7 +97,7 @@ function loadWithdrawals(){
       withdrawalsListEl.innerHTML = "";
       snapshot.forEach(doc => {
         const tx = doc.data();
-        const userId = doc.ref.parent.parent.parent.id; // récupération correcte du uid
+        const userId = doc.ref.parent.parent.parent.id; // récupération uid parent
         const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
         const status = tx.status || "Pending";
         const fee = tx.fee || (tx.amount*0.05).toFixed(2);
@@ -144,7 +154,3 @@ function reject(userId, docId, amount){
   });
 }
 </script>
-</body>
-</html>
-
-      
