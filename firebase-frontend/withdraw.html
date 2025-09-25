@@ -12,9 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body {
-  font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; display:none; text-align:center;
-}
+body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; display:none; text-align:center; }
 header { background:#0d47a1; color:#fff; padding:20px; position:relative; }
 header h1 { margin:0; font-size:1.6em; }
 .container { margin:30px auto; max-width:450px; background:#fff; padding:30px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15); }
@@ -67,7 +65,6 @@ button:hover { background:#e68900; }
     <ul class="history-list" id="history-list"></ul>
   </div>
 </div>
-
 <script>
 document.body.style.display = "block";
 
@@ -114,8 +111,9 @@ auth.onAuthStateChanged(user => {
     }
   });
 
-  // Charger historique
-  db.collection("transactions").doc(user.uid).collection("withdrawals")
+  // Charger historique depuis nouvelle collection plate
+  db.collection("withdrawals")
+    .where("userId","==",user.uid)
     .orderBy("createdAt","desc").limit(10)
     .onSnapshot(snapshot => {
       historyListEl.innerHTML = "";
@@ -172,8 +170,10 @@ document.getElementById("withdraw-btn").addEventListener("click", async () => {
   const net = amt - fee;
 
   try {
-    const txRef = db.collection("transactions").doc(auth.currentUser.uid).collection("withdrawals").doc();
+    // 🔹 Nouvelle collection plate
+    const txRef = db.collection("withdrawals").doc();
     await txRef.set({
+      userId: auth.currentUser.uid,
       amount: amt,
       fee: fee,
       netReceived: net,
@@ -203,5 +203,5 @@ document.getElementById("withdraw-btn").addEventListener("click", async () => {
 });
 </script>
 </body>
-    </html>
-                                 
+</html>
+
