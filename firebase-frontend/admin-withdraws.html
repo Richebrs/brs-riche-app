@@ -73,7 +73,6 @@ auth.onAuthStateChanged(async user => {
     if (!doc.exists) throw new Error("Compte introuvable");
     const role = (doc.data().role || "").toLowerCase();
     if (role !== "admin") throw new Error("Admin uniquement");
-    // ✅ L’utilisateur est admin
     loadWithdrawals();
   } catch (err) {
     alert(`Accès refusé : ${err.message}`);
@@ -83,13 +82,12 @@ auth.onAuthStateChanged(async user => {
 
 // 🔹 Charger les retraits
 function loadWithdrawals() {
-  db.collectionGroup("withdrawals")
-    .orderBy("createdAt", "desc")
+  db.collection("withdrawals")
+    .orderBy("createdAt","desc")
     .onSnapshot(snapshot => {
       withdrawalsListEl.innerHTML = "";
       snapshot.forEach(doc => {
         const tx = doc.data();
-        const userId = doc.ref.parent.parent.id;
         const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
         const status = tx.status || "Pending";
         const fee = tx.fee ?? (tx.amount*0.05).toFixed(2);
@@ -97,7 +95,7 @@ function loadWithdrawals() {
 
         withdrawalsListEl.innerHTML += `
           <tr>
-            <td>${userId}</td>
+            <td>${tx.userId}</td>
             <td>${tx.amount} USDT</td>
             <td>${fee} USDT</td>
             <td>${netReceived} USDT</td>
@@ -107,8 +105,8 @@ function loadWithdrawals() {
             <td id="status-${doc.id}">${status}</td>
             <td>
               ${status.toLowerCase() === "pending" ? `
-              <button class="button approve" onclick="approve('${userId}','${doc.id}',${tx.amount})">✅</button>
-              <button class="button reject" onclick="reject('${userId}','${doc.id}',${tx.amount})">❌</button>` : "-"}
+              <button class="button approve" onclick="approve('${doc.id}',${tx.amount})">✅</button>
+              <button class="button reject" onclick="reject('${doc.id}',${tx.amount},'${tx.userId}')">❌</button>` : "-"}
             </td>
           </tr>
         `;
@@ -119,9 +117,9 @@ function loadWithdrawals() {
 }
 
 // 🔹 Approve
-async function approve(userId, docId, amount){
+async function approve(docId, amount){
   try {
-    const txRef = db.collection("transactions").doc(userId).collection("withdrawals").doc(docId);
+    const txRef = db.collection("withdrawals").doc(docId);
     await txRef.update({status:"Approved"});
     messageEl.innerText = `✅ Retrait approuvé pour ${amount} USDT`;
     document.getElementById(`status-${docId}`).innerText = "Approved";
@@ -131,18 +129,19 @@ async function approve(userId, docId, amount){
 }
 
 // 🔹 Reject
-async function reject(userId, docId, amount){
-  const txRef = db.collection("transactions").doc(userId).collection("withdrawals").doc(docId);
-  const walletRef = db.collection("wallets").doc(userId);
-
+async function reject(docId, amount, userId){
   try {
+    const txRef = db.collection("withdrawals").doc(docId);
+    const walletRef = db.collection("wallets").doc(userId);
+
     await db.runTransaction(async t => {
       const walletDoc = await t.get(walletRef);
       const balance = walletDoc.exists ? (walletDoc.data().balance || 0) : 0;
       t.update(txRef, {status:"Rejected"});
       t.set(walletRef, {balance: balance + amount}, {merge:true});
     });
-    messageEl.innerText = `❌ Retrait refusé, ${amount} USDT remboursé à l'utilisateur`;
+
+    messageEl.innerText = `❌ Retrait refusé, ${amount} USDT remboursé`;
     document.getElementById(`status-${docId}`).innerText = "Rejected";
   } catch(e) {
     messageEl.innerText = `❌ Erreur : ${e.message}`;
