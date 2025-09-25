@@ -10,32 +10,26 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
 body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; display:none; text-align:center; }
-header { background:#0d47a1; color:#fff; padding:15px; text-align:center; }
+header { background:#0d47a1; color:#fff; padding:20px; display:flex; justify-content:space-between; align-items:center; }
 header h1 { margin:0; font-size:1.4em; }
-header a { color:#fff; text-decoration:none; font-size:0.9em; display:inline-block; margin-top:5px; }
-.container { margin:15px auto; max-width:1000px; background:#fff; padding:15px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); overflow-x:auto; }
-.table { width:100%; border-collapse:collapse; font-size:0.9em; }
-.table th, .table td { padding:8px 6px; border:1px solid #ccc; text-align:center; }
-.button { padding:5px 10px; border:none; border-radius:6px; cursor:pointer; color:#fff; font-size:0.85em; display:flex; align-items:center; justify-content:center; gap:4px; }
+header a { color:#fff; text-decoration:none; font-size:0.95em; }
+.container { margin:20px auto; max-width:950px; background:#fff; padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15); text-align:left; overflow-x:auto; }
+.table { width:100%; border-collapse:collapse; }
+.table th, .table td { padding:10px; border:1px solid #ccc; text-align:center; white-space:nowrap; }
+.button { padding:6px 12px; border:none; border-radius:8px; cursor:pointer; color:#fff; }
 .approve { background:green; }
 .reject { background:red; }
-.status-pending { background:#fbc02d; color:#000; font-weight:bold; padding:4px 8px; border-radius:6px; display:inline-block; }
-.status-approved { background:green; color:#fff; font-weight:bold; padding:4px 8px; border-radius:6px; display:inline-block; }
-.status-rejected { background:red; color:#fff; font-weight:bold; padding:4px 8px; border-radius:6px; display:inline-block; }
-.msg { margin:10px 0; font-size:0.95em; color:#d32f2f; }
-@media (max-width:600px){
-  .table th, .table td { font-size:0.8em; padding:6px 4px; }
-  header h1 { font-size:1.2em; }
-  .button { font-size:0.75em; padding:4px 6px; }
+.msg { margin:10px 0; font-size:0.95em; }
+@media(max-width:600px){
+  .table th, .table td { font-size:0.8em; padding:6px; }
 }
 </style>
 </head>
 <body>
 <header>
-  <h1>💼 Menu Admin Retraits</h1>
+  <h1>💼 Admin valider Retraits</h1>
   <a href="dashboard.html">⬅ Retour au Dashboard</a>
 </header>
-
 <div class="container">
   <p class="msg" id="message"></p>
   <table class="table">
@@ -55,11 +49,10 @@ header a { color:#fff; text-decoration:none; font-size:0.9em; display:inline-blo
     <tbody id="withdrawals-list"></tbody>
   </table>
 </div>
-
 <script>
 document.body.style.display = "block";
 
-// 🔹 Config Firebase
+// 🔹 Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
   authDomain: "brs-riche-2.firebaseapp.com",
@@ -73,21 +66,28 @@ const messageEl = document.getElementById("message");
 const withdrawalsListEl = document.getElementById("withdrawals-list");
 
 // 🔹 Auth Admin
-auth.onAuthStateChanged(user => {
+auth.onAuthStateChanged(async user => {
   if (!user) return window.location.href = "login.html";
 
-  db.collection("users").doc(user.uid).get().then(doc => {
-    if (!doc.exists || doc.data().role?.toLowerCase() !== "admin") {
+  try {
+    const doc = await db.collection("users").doc(user.uid).get();
+    if (!doc.exists) throw new Error("Compte introuvable");
+
+    const role = (doc.data().role || "").toLowerCase();
+    if (role !== "admin") {
       alert("Accès refusé : Admin uniquement");
       return window.location.href = "dashboard.html";
     }
+
+    // ✅ L’utilisateur est admin, charger les retraits
     loadWithdrawals();
-  }).catch(err => {
+
+  } catch(err) {
     messageEl.innerText = `❌ Erreur Firestore : ${err.message}`;
-  });
+  }
 });
 
-// 🔹 Charger les retraits
+// 🔹 Charger tous les retraits via collectionGroup
 function loadWithdrawals(){
   db.collectionGroup("withdrawals")
     .orderBy("createdAt","desc")
@@ -95,15 +95,11 @@ function loadWithdrawals(){
       withdrawalsListEl.innerHTML = "";
       snapshot.forEach(doc => {
         const tx = doc.data();
-        const userId = doc.ref.parent.parent.id;
+        const userId = doc.ref.parent.parent.id; // parent = document user
         const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
         const status = tx.status || "Pending";
         const fee = tx.fee ?? (tx.amount*0.05).toFixed(2);
         const netReceived = tx.netReceived ?? (tx.amount - fee).toFixed(2);
-
-        let statusClass = "status-pending";
-        if(status.toLowerCase() === "approved") statusClass="status-approved";
-        else if(status.toLowerCase() === "rejected") statusClass="status-rejected";
 
         withdrawalsListEl.innerHTML += `
           <tr>
@@ -114,11 +110,11 @@ function loadWithdrawals(){
             <td>${tx.network}</td>
             <td>${tx.address}</td>
             <td>${date}</td>
-            <td><span id="status-${doc.id}" class="${statusClass}">${status}</span></td>
+            <td id="status-${doc.id}">${status}</td>
             <td>
               ${status.toLowerCase() === "pending" ? `
-              <button class="button approve" onclick="approve('${userId}','${doc.id}',${tx.amount})"><i class="fa fa-check"></i>Valider</button>
-              <button class="button reject" onclick="reject('${userId}','${doc.id}',${tx.amount})"><i class="fa fa-times"></i>Refuser</button>` : "-"}
+              <button class="button approve" onclick="approve('${userId}','${doc.id}',${tx.amount})">✅</button>
+              <button class="button reject" onclick="reject('${userId}','${doc.id}',${tx.amount})">❌</button>` : "-"}
             </td>
           </tr>
         `;
@@ -132,12 +128,9 @@ function loadWithdrawals(){
 function approve(userId, docId, amount){
   const txRef = db.collection("transactions").doc(userId).collection("withdrawals").doc(docId);
   txRef.update({status:"Approved"}).then(()=>{
-    messageEl.style.color = "green";
     messageEl.innerText = `✅ Retrait approuvé pour ${amount} USDT`;
-    document.getElementById(`status-${docId}`).className = "status-approved";
     document.getElementById(`status-${docId}`).innerText = "Approved";
   }).catch(e => {
-    messageEl.style.color = "#d32f2f";
     messageEl.innerText = `❌ Erreur : ${e.message}`;
   });
 }
@@ -154,15 +147,13 @@ function reject(userId, docId, amount){
     t.update(txRef, {status:"Rejected"});
     t.update(userRef, {"wallet.balance": newBalance});
   }).then(()=>{
-    messageEl.style.color = "#d32f2f";
     messageEl.innerText = `❌ Retrait refusé, ${amount} USDT remboursé à l'utilisateur`;
-    document.getElementById(`status-${docId}`).className = "status-rejected";
     document.getElementById(`status-${docId}`).innerText = "Rejected";
   }).catch(e => {
-    messageEl.style.color = "#d32f2f";
     messageEl.innerText = `❌ Erreur : ${e.message}`;
   });
 }
 </script>
 </body>
-</html>
+  </html>
+  
