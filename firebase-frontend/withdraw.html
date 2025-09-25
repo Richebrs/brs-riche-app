@@ -5,11 +5,9 @@
 <title>Retrait - BRS RICHE</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
 <style>
 body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; display:none; }
 header { background:#0d47a1; color:#fff; padding:20px; position:relative; text-align:center; }
@@ -36,11 +34,10 @@ button:hover { background:#e68900; }
 
 .history { text-align:center; }
 .history-list { list-style:none; padding:0; max-height:300px; overflow-y:auto; margin:10px 0; }
-.history-list li { margin:5px 0; padding:10px 15px; border-radius:12px; font-size:0.95em; text-align:center; display:flex; justify-content:space-between; align-items:center; }
+.history-list li { margin:5px 0; padding:10px 15px; border-radius:12px; font-size:0.95em; text-align:center; display:flex; flex-direction:column; justify-content:center; align-items:center; }
 .status-Pending { background:#fff3cd; color:#856404; }
 .status-Success { background:#d4edda; color:#155724; }
 .status-Refusé { background:#f8d7da; color:#721c24; }
-.copy-btn { cursor:pointer; color:#0d47a1; margin-left:5px; }
 
 #see-more { margin-top:10px; display:inline-block; background:#0d47a1; color:#fff; padding:8px 15px; border-radius:12px; cursor:pointer; transition:0.2s; }
 #see-more:hover { background:#08306b; }
@@ -48,13 +45,13 @@ button:hover { background:#e68900; }
 @media(max-width:480px){
   .card { padding:15px; }
   input, select, button { font-size:1em; padding:10px; }
-  .history-list li { flex-direction: column; font-size:0.9em; }
+  .history-list li { font-size:0.9em; }
 }
 </style>
 </head>
 <body>
 <header>
-  <h1>💸 Do Retrait</h1>
+  <h1>💸 Retrait</h1>
   <a href="dashboard.html" class="back-btn">⬅ Retour</a>
 </header>
 
@@ -122,12 +119,12 @@ const seeMoreBtn = document.getElementById("see-more");
 let lastVisible = null;
 const historyLimit = 5;
 
-// 🔹 Auth Listener
 auth.onAuthStateChanged(user=>{
   if(!user) return window.location.href="login.html";
 
   const userRef = db.collection("users").doc(user.uid);
 
+  // Charger soldes
   userRef.onSnapshot(doc=>{
     if(doc.exists){
       const data = doc.data();
@@ -145,13 +142,13 @@ auth.onAuthStateChanged(user=>{
   loadWithdrawHistory(true);
 });
 
-// 🔹 Historique
+// Historique
 function loadWithdrawHistory(initial=true){
   let query = db.collection("withdrawals")
     .where("userId","==",auth.currentUser.uid)
     .orderBy("createdAt","desc")
     .limit(historyLimit);
-  
+
   if(!initial && lastVisible) query = query.startAfter(lastVisible);
 
   query.get().then(snapshot=>{
@@ -161,10 +158,13 @@ function loadWithdrawHistory(initial=true){
       const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
       const status = tx.status || "Pending";
       const icon = status==="Success"?"✅":status==="Refusé"?"❌":"⏳";
+
       const li = document.createElement("li");
       li.className="status-"+status;
-      li.innerHTML=`<span>${date} | ${tx.amount} USDT | ${icon}</span>
-                      <span>${tx.address} <i class="fa fa-copy copy-btn" onclick="navigator.clipboard.writeText('${tx.address}')"></i></span>`;
+      li.innerHTML=`<span>${date}</span>
+                      <span>${tx.amount} USDT</span>
+                      <span>${tx.address}</span>
+                      <span>${icon} ${status}</span>`;
       historyListEl.appendChild(li);
     });
     lastVisible = snapshot.docs[snapshot.docs.length-1];
@@ -173,7 +173,7 @@ function loadWithdrawHistory(initial=true){
 
 seeMoreBtn.addEventListener("click",()=>loadWithdrawHistory(false));
 
-// 🔹 Calcul frais
+// Calcul frais
 function updateFee(){
   const amt = parseFloat(amountEl.value) || 0;
   if(amt<3){ feeTextEl.innerText="Montant minimum : 3 USDT"; return; }
@@ -183,7 +183,7 @@ function updateFee(){
 }
 amountEl.addEventListener("input",updateFee);
 
-// 🔹 Demande de retrait
+// Demande retrait
 document.getElementById("withdraw-btn").addEventListener("click", async()=>{
   messageEl.innerText="";
   const amt = parseFloat(amountEl.value);
@@ -205,7 +205,7 @@ document.getElementById("withdraw-btn").addEventListener("click", async()=>{
       netReceived: net,
       network: network,
       address: address,
-      status:"Success", // déduit immédiatement
+      status:"Success",
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -228,4 +228,4 @@ document.getElementById("withdraw-btn").addEventListener("click", async()=>{
 </script>
 </body>
   </html>
-  
+                                        
