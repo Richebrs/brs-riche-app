@@ -1,32 +1,37 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Administrateur Retraits - BRS RICHE</title>
+<title>Admin Retraits - BRS RICHE</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<style>
-body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; display:none; text-align:center; }
-header { background:#0d47a1; color:#fff; padding:20px; }
-header h1 { margin:0; font-size:1.6em; }
-.container { margin:20px auto; max-width:900px; background:#fff; padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15); text-align:left; }
-.table { width:100%; border-collapse:collapse; }
-.table th, .table td { padding:10px; border:1px solid #ccc; text-align:center; }
-.button { padding:6px 12px; border:none; border-radius:8px; cursor:pointer; color:#fff; }
-.approve { background:green; }
-.reject { background:red; }
-.msg { margin:10px 0; font-size:0.95em; }
-</style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; display:none; text-align:center; }
+header { background:#0d47a1; color:#fff; padding:20px; text-align:left; }
+header h1 { margin:0; font-size:1.6em; display:inline-block; }
+header a { float:right; color:#fff; text-decoration:none; margin-top:5px; }
+.container { margin:20px auto; max-width:1000px; background:#fff; padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15); text-align:left; overflow-x:auto; }
+.table { width:100%; border-collapse:collapse; }
+.table th, .table td { padding:10px; border:1px solid #ccc; text-align:center; font-size:0.9em; }
+.button { padding:6px 12px; border:none; border-radius:8px; cursor:pointer; color:#fff; margin:2px; }
+.approve { background:green; }
+.reject { background:red; }
+.msg { margin:10px 0; font-size:0.95em; color:#333; }
+@media(max-width:768px){
+  .table th, .table td { font-size:0.8em; padding:6px; }
+  header h1 { font-size:1.3em; }
+}
+</style>
 </head>
 <body>
 <header>
   <h1>💼 Admin Retraits</h1>
-  <a href="dashboard.html" style="color:#fff; text-decoration:none;">⬅ Retour au Dashboard</a>
+  <a href="dashboard.html">⬅ Dashboard</a>
 </header>
-
 <div class="container">
   <p class="msg" id="message"></p>
   <table class="table">
@@ -79,7 +84,6 @@ auth.onAuthStateChanged(user => {
       return window.location.href = "dashboard.html";
     }
 
-    // ✅ Ici l’utilisateur est bien admin
     loadWithdrawals();
   }).catch(err => {
     messageEl.innerText = `❌ Erreur Firestore : ${err.message}`;
@@ -87,7 +91,7 @@ auth.onAuthStateChanged(user => {
 });
 
 // 🔹 Charger les retraits
-function loadWithdrawals() {
+function loadWithdrawals(){
   db.collectionGroup("withdrawals")
     .orderBy("createdAt","desc")
     .onSnapshot(snapshot => {
@@ -95,8 +99,8 @@ function loadWithdrawals() {
       snapshot.forEach(doc => {
         const tx = doc.data();
 
-        // ✅ Récupérer correctement l'UID de l'utilisateur
-        const userId = doc.ref.parent.parent.id;
+        // ✅ récupère uid depuis la hiérarchie correcte
+        const userId = doc.ref.parent.parent.parent.id; 
 
         const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
         const status = tx.status || "Pending";
@@ -109,8 +113,8 @@ function loadWithdrawals() {
             <td>${tx.amount} USDT</td>
             <td>${fee} USDT</td>
             <td>${netReceived} USDT</td>
-            <td>${tx.network || '—'}</td>
-            <td>${tx.address || '—'}</td>
+            <td>${tx.network}</td>
+            <td>${tx.address}</td>
             <td>${date}</td>
             <td id="status-${doc.id}">${status}</td>
             <td>
@@ -121,6 +125,8 @@ function loadWithdrawals() {
           </tr>
         `;
       });
+    }, err => {
+      messageEl.innerText = `❌ Erreur snapshot : ${err.message}`;
     });
 }
 
@@ -139,7 +145,7 @@ function approve(userId, docId, amount){
 function reject(userId, docId, amount){
   const txRef = db.collection("transactions").doc(userId).collection("withdrawals").doc(docId);
   const userRef = db.collection("users").doc(userId);
-  
+
   db.runTransaction(async t => {
     const userDoc = await t.get(userRef);
     const wallet = userDoc.data().wallet || {};
@@ -156,3 +162,5 @@ function reject(userId, docId, amount){
 </script>
 </body>
 </html>
+
+  
