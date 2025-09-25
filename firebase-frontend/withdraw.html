@@ -122,12 +122,12 @@ const seeMoreBtn = document.getElementById("see-more");
 let lastVisible = null;
 const historyLimit = 5;
 
+// 🔹 Auth Listener
 auth.onAuthStateChanged(user=>{
   if(!user) return window.location.href="login.html";
 
   const userRef = db.collection("users").doc(user.uid);
 
-  // Charger soldes
   userRef.onSnapshot(doc=>{
     if(doc.exists){
       const data = doc.data();
@@ -145,7 +145,7 @@ auth.onAuthStateChanged(user=>{
   loadWithdrawHistory(true);
 });
 
-// Historique
+// 🔹 Historique
 function loadWithdrawHistory(initial=true){
   let query = db.collection("withdrawals")
     .where("userId","==",auth.currentUser.uid)
@@ -173,7 +173,7 @@ function loadWithdrawHistory(initial=true){
 
 seeMoreBtn.addEventListener("click",()=>loadWithdrawHistory(false));
 
-// Calcul frais
+// 🔹 Calcul frais
 function updateFee(){
   const amt = parseFloat(amountEl.value) || 0;
   if(amt<3){ feeTextEl.innerText="Montant minimum : 3 USDT"; return; }
@@ -183,7 +183,7 @@ function updateFee(){
 }
 amountEl.addEventListener("input",updateFee);
 
-// Demande retrait
+// 🔹 Demande de retrait
 document.getElementById("withdraw-btn").addEventListener("click", async()=>{
   messageEl.innerText="";
   const amt = parseFloat(amountEl.value);
