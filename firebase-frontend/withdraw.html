@@ -13,64 +13,91 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; display:none; text-align:center; }
-header { background:#0d47a1; color:#fff; padding:20px; position:relative; }
+body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; display:none; }
+header { background:#0d47a1; color:#fff; padding:20px; position:relative; text-align:center; }
 header h1 { margin:0; font-size:1.6em; }
-.container { margin:30px auto; max-width:450px; background:#fff; padding:30px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15); }
-.balance-box { margin-bottom:15px; }
-.balance-box h3 { margin:0; font-size:1em; color:#0d47a1; }
-.balance-box p { margin:5px 0 0; font-size:1.4em; font-weight:bold; }
+.back-btn { position:absolute; left:20px; top:22px; color:#fff; text-decoration:none; font-weight:bold; }
+
+.container { max-width:450px; margin:20px auto; padding:0 15px; }
+
+.card {
+  background:#fff; border-radius:16px; padding:20px; margin-bottom:20px;
+  box-shadow:0 6px 16px rgba(0,0,0,0.15);
+  text-align:center;
+}
+
+.card h3 { margin:0; color:#0d47a1; font-size:1em; }
+.card p { font-size:1.4em; font-weight:bold; margin:10px 0 0; }
+
 input, select { width:100%; padding:12px 10px; margin:8px 0 15px; border-radius:8px; border:1px solid #ccc; font-size:1em; }
-button { padding:12px; width:100%; font-size:1.2em; font-weight:bold; color:#fff; background:#ff9800; border:none; border-radius:12px; cursor:pointer; transition:background 0.2s; }
+button { padding:12px; width:100%; font-size:1.2em; font-weight:bold; color:#fff; background:#ff9800; border:none; border-radius:12px; cursor:pointer; transition:0.2s; }
 button:hover { background:#e68900; }
+
 .msg { margin:10px 0; font-size:0.95em; }
-.success { color:green; }
-.error { color:red; }
-.history { margin-top:30px; text-align:center; }
-.history h3 { margin-bottom:10px; color:#0d47a1; }
-.history-list { list-style:none; padding:0; max-height:200px; overflow-y:auto; }
-.history-list li { background:#f0f0f0; margin:5px 0; padding:8px; border-radius:8px; font-size:0.95em; }
-.back-btn { margin-top:15px; display:inline-block; text-decoration:none; color:#0d47a1; font-weight:bold; }
+.msg.success { color:green; }
+.msg.error { color:red; }
+
+.history { text-align:center; }
+.history-list { list-style:none; padding:0; max-height:300px; overflow-y:auto; margin:10px 0; }
+.history-list li { background:#e3f2fd; margin:5px 0; padding:10px 15px; border-radius:12px; font-size:0.95em; text-align:center; }
+
+#see-more { margin-top:10px; display:inline-block; background:#0d47a1; color:#fff; padding:8px 15px; border-radius:12px; cursor:pointer; transition:0.2s; }
+#see-more:hover { background:#08306b; }
+
+@media(max-width:480px){
+  .card { padding:15px; }
+  input, select, button { font-size:1em; padding:10px; }
+}
 </style>
 </head>
 <body>
 <header>
-  <h1>💸 Demande d. e Retrait</h1>
+  <h1>💸 Demande de Retrait</h1>
   <a href="dashboard.html" class="back-btn">⬅ Retour</a>
 </header>
 
 <div class="container">
-  <div class="balance-box"><h3>Solde disponible</h3><p id="balance-available">0 USDT</p></div>
-  <div class="balance-box"><h3>Gains totaux</h3><p id="balance-total">0 USDT</p></div>
-  <div class="balance-box"><h3>Déjà retiré</h3><p id="balance-withdrawn">0 USDT</p></div>
+  <div class="card">
+    <h3>Solde disponible</h3>
+    <p id="balance-available">0 USDT</p>
+  </div>
+  <div class="card">
+    <h3>Gains totaux</h3>
+    <p id="balance-total">0 USDT</p>
+  </div>
+  <div class="card">
+    <h3>Déjà retiré</h3>
+    <p id="balance-withdrawn">0 USDT</p>
+  </div>
 
-  <label for="amount">Montant à retirer (USDT) :</label>
-  <input type="number" id="amount" placeholder="Ex: 5" min="3">
+  <div class="card">
+    <label for="amount">Montant à retirer (USDT) :</label>
+    <input type="number" id="amount" placeholder="Ex: 5" min="3">
 
-  <label for="network">Réseau :</label>
-  <select id="network">
-    <option value="TRC20">USDT TRC20</option>
-    <option value="BEP20">USDT BEP20</option>
-  </select>
+    <label for="network">Réseau :</label>
+    <select id="network">
+      <option value="TRC20">USDT TRC20</option>
+      <option value="BEP20">USDT BEP20</option>
+    </select>
 
-  <label for="address">Adresse de retrait :</label>
-  <input type="text" id="address" placeholder="Votre adresse USDT">
+    <label for="address">Adresse de retrait :</label>
+    <input type="text" id="address" placeholder="Votre adresse USDT">
 
-  <p class="msg" id="fee-text">Frais (5%) : 0 USDT | Net à recevoir : 0 USDT</p>
-  <button id="withdraw-btn">📤 Demander un retrait</button>
+    <p class="msg" id="fee-text">Frais (5%) : 0 USDT | Net à recevoir : 0 USDT</p>
+    <button id="withdraw-btn">📤 Demander un retrait</button>
+    <p class="msg" id="message"></p>
+  </div>
 
-  <p class="msg" id="message"></p>
-
-  <div class="history">
+  <div class="card history">
     <h3>Historique des retraits</h3>
     <ul class="history-list" id="history-list"></ul>
+    <span id="see-more">Voir plus</span>
   </div>
 </div>
 
 <script>
 document.body.style.display = "block";
 
-// 🔹 Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
   authDomain: "brs-riche-2.firebaseapp.com",
@@ -80,10 +107,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-let balanceAvailable = 0;
-let totalGains = 0;
-let totalWithdrawn = 0;
-
+let balanceAvailable = 0, totalGains = 0, totalWithdrawn = 0;
 const balanceEl = document.getElementById("balance-available");
 const totalEl = document.getElementById("balance-total");
 const withdrawnEl = document.getElementById("balance-withdrawn");
@@ -91,88 +115,81 @@ const amountEl = document.getElementById("amount");
 const feeTextEl = document.getElementById("fee-text");
 const messageEl = document.getElementById("message");
 const historyListEl = document.getElementById("history-list");
+const seeMoreBtn = document.getElementById("see-more");
+
+let lastVisible = null;
+const historyLimit = 5;
 
 // 🔹 Auth Listener
 auth.onAuthStateChanged(user => {
-  if (!user) return window.location.href = "login.html";
+  if(!user) return window.location.href="login.html";
 
   const userRef = db.collection("users").doc(user.uid);
 
-  // Charger les soldes
-  userRef.onSnapshot(doc => {
-    if (doc.exists) {
+  userRef.onSnapshot(doc=>{
+    if(doc.exists){
       const data = doc.data();
       const wallet = data.wallet || {};
       balanceAvailable = wallet.balance ?? 0;
       totalWithdrawn = wallet.totalWithdrawn ?? 0;
       totalGains = wallet.totalGains ?? (balanceAvailable + totalWithdrawn);
 
-      balanceEl.innerText = `${balanceAvailable.toFixed(2)} USDT`;
-      withdrawnEl.innerText = `${totalWithdrawn.toFixed(2)} USDT`;
-      totalEl.innerText = `${totalGains.toFixed(2)} USDT`;
+      balanceEl.innerText = balanceAvailable.toFixed(2)+" USDT";
+      withdrawnEl.innerText = totalWithdrawn.toFixed(2)+" USDT";
+      totalEl.innerText = totalGains.toFixed(2)+" USDT";
     }
   });
 
-  // Charger historique depuis collection plate
-  db.collection("withdrawals")
-    .where("userId","==",user.uid)
-    .orderBy("createdAt","desc").limit(10)
-    .onSnapshot(snapshot => {
-      historyListEl.innerHTML = "";
-      snapshot.forEach(doc => {
-        const tx = doc.data();
-        const status = tx.status || "Pending";
-        const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
-        historyListEl.innerHTML += `<li>${date} | ${tx.amount} USDT | ${status}</li>`;
-      });
-    });
+  loadWithdrawHistory(true);
 });
+
+// 🔹 Historique
+function loadWithdrawHistory(initial=true){
+  let query = db.collection("withdrawals")
+    .where("userId","==",auth.currentUser.uid)
+    .orderBy("createdAt","desc")
+    .limit(historyLimit);
+  
+  if(!initial && lastVisible) query = query.startAfter(lastVisible);
+
+  query.get().then(snapshot=>{
+    if(initial) historyListEl.innerHTML="";
+    snapshot.forEach(doc=>{
+      const tx = doc.data();
+      const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
+      const status = tx.status || "Pending";
+      historyListEl.innerHTML += `<li>${date} | ${tx.amount} USDT | ${status}</li>`;
+    });
+    lastVisible = snapshot.docs[snapshot.docs.length-1];
+  });
+}
+
+seeMoreBtn.addEventListener("click",()=>loadWithdrawHistory(false));
 
 // 🔹 Calcul frais
 function updateFee(){
   const amt = parseFloat(amountEl.value) || 0;
-  if (amt < 3) {
-    feeTextEl.innerText = "Montant minimum : 3 USDT";
-    return;
-  }
-  if (amt > balanceAvailable) {
-    feeTextEl.innerText = "Montant supérieur au solde disponible !";
-    return;
-  }
-  const fee = amt * 0.05;
-  const net = amt - fee;
-  feeTextEl.innerText = `Frais (5%) : ${fee.toFixed(2)} USDT | Net à recevoir : ${net.toFixed(2)} USDT`;
+  if(amt<3){ feeTextEl.innerText="Montant minimum : 3 USDT"; return; }
+  if(amt>balanceAvailable){ feeTextEl.innerText="Montant supérieur au solde disponible !"; return; }
+  const fee = amt*0.05, net=amt-fee;
+  feeTextEl.innerText=`Frais (5%) : ${fee.toFixed(2)} USDT | Net à recevoir : ${net.toFixed(2)} USDT`;
 }
-amountEl.addEventListener("input", updateFee);
+amountEl.addEventListener("input",updateFee);
 
 // 🔹 Demande de retrait
-document.getElementById("withdraw-btn").addEventListener("click", async () => {
-  messageEl.innerText = "";
+document.getElementById("withdraw-btn").addEventListener("click", async()=>{
+  messageEl.innerText="";
   const amt = parseFloat(amountEl.value);
   const network = document.getElementById("network").value;
   const address = document.getElementById("address").value.trim();
 
-  if(!amt || amt < 3){
-    messageEl.innerText = "❌ Le montant minimum est 3 USDT";
-    messageEl.className = "msg error";
-    return;
-  }
-  if(amt > balanceAvailable){
-    messageEl.innerText = "❌ Montant supérieur au solde disponible !";
-    messageEl.className = "msg error";
-    return;
-  }
-  if(!address){
-    messageEl.innerText = "❌ Veuillez entrer une adresse de retrait valide.";
-    messageEl.className = "msg error";
-    return;
-  }
+  if(!amt || amt<3){ messageEl.innerText="❌ Le montant minimum est 3 USDT"; messageEl.className="msg error"; return;}
+  if(amt>balanceAvailable){ messageEl.innerText="❌ Montant supérieur au solde disponible !"; messageEl.className="msg error"; return;}
+  if(!address){ messageEl.innerText="❌ Veuillez entrer une adresse de retrait valide."; messageEl.className="msg error"; return;}
 
-  const fee = amt * 0.05;
-  const net = amt - fee;
+  const fee = amt*0.05, net=amt-fee;
 
-  try {
-    // 🔹 Nouvelle collection plate
+  try{
     const txRef = db.collection("withdrawals").doc();
     await txRef.set({
       userId: auth.currentUser.uid,
@@ -181,27 +198,17 @@ document.getElementById("withdraw-btn").addEventListener("click", async () => {
       netReceived: net,
       network: network,
       address: address,
-      status: "Pending",
+      status:"Pending", // Ne pas déduire ici
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    // 🔹 Mettre à jour le wallet
-    const userRef = db.collection("users").doc(auth.currentUser.uid);
-    await userRef.update({
-      "wallet.balance": balanceAvailable - amt,
-      "wallet.totalWithdrawn": totalWithdrawn + amt
-    });
+    messageEl.innerText=`✅ Retrait demandé ! Net à recevoir : ${net.toFixed(2)} USDT`;
+    messageEl.className="msg success";
+    amountEl.value=""; updateFee(); loadWithdrawHistory(true);
 
-    messageEl.innerText = `✅ Retrait demandé avec succès ! Net à recevoir : ${net.toFixed(2)} USDT`;
-    messageEl.className = "msg success";
-
-    amountEl.value = "";
-    updateFee();
-
-  } catch(e) {
-    messageEl.innerText = `❌ Erreur lors de la demande de retrait : ${e.message}`;
-    messageEl.className = "msg error";
-    console.error(e);
+  }catch(e){
+    messageEl.innerText=`❌ Erreur : ${e.message}`;
+    messageEl.className="msg error"; console.error(e);
   }
 });
 </script>
