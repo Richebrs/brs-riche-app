@@ -1,0 +1,187 @@
+!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Retrait - BRS RICHE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+/* --- même style que tu avais --- */
+</style>
+</head>
+<body>
+<header>
+  <h1>💸 Retrait</h1>
+  <a href="dashboard.html" class="back-btn">⬅ Retour</a>
+</header>
+<div class="container">
+  <div class="card">
+    <h3>Solde disponible</h3>
+    <p id="balance-available">0 USDT</p>
+  </div>
+  <div class="card">
+    <h3>Gains totaux</h3>
+    <p id="balance-total">0 USDT</p>
+  </div>
+  <div class="card">
+    <h3>Déjà retiré</h3>
+    <p id="balance-withdrawn">0 USDT</p>
+  </div>
+  <div class="card">
+    <label for="amount">Montant à retirer (USDT) :</label>
+    <input type="number" id="amount" placeholder="Ex: 5" min="3">
+
+    <label for="network">Réseau :</label>
+    <select id="network">
+      <option value="TRC20">USDT TRC20</option>
+      <option value="BEP20">USDT BEP20</option>
+    </select>
+
+    <label for="address">Adresse de retrait :</label>
+    <input type="text" id="address" placeholder="Votre adresse USDT">
+
+    <p class="msg" id="fee-text">Frais (5%) : 0 USDT | Net à recevoir : 0 USDT</p>
+    <button id="withdraw-btn">📤 Demander un retrait</button>
+    <p class="msg" id="message"></p>
+  </div>
+
+  <div class="card history">
+    <h3>Historique des retraits</h3>
+    <ul class="history-list" id="history-list"></ul>
+    <span id="see-more">Voir plus</span>
+  </div>
+</div>
+
+<script>
+document.body.style.display="block";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+  authDomain: "brs-riche-2.firebaseapp.com",
+  projectId: "brs-riche-2"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let balanceAvailable = 0, totalGains = 0, totalWithdrawn = 0;
+const balanceEl = document.getElementById("balance-available");
+const totalEl = document.getElementById("balance-total");
+const withdrawnEl = document.getElementById("balance-withdrawn");
+const amountEl = document.getElementById("amount");
+const feeTextEl = document.getElementById("fee-text");
+const messageEl = document.getElementById("message");
+const historyListEl = document.getElementById("history-list");
+const seeMoreBtn = document.getElementById("see-more");
+
+let lastVisible = null;
+const historyLimit = 5;
+
+auth.onAuthStateChanged(user=>{
+  if(!user) return window.location.href="login.html";
+
+  const userRef = db.collection("users").doc(user.uid);
+
+  // Charger soldes
+  userRef.onSnapshot(doc=>{
+    if(doc.exists){
+      const data = doc.data();
+      const wallet = data.wallet || {};
+      balanceAvailable = wallet.balance ?? 0;
+      totalWithdrawn = wallet.totalWithdrawn ?? 0;
+      totalGains = wallet.totalGains ?? (balanceAvailable + totalWithdrawn);
+
+      balanceEl.innerText = balanceAvailable.toFixed(2)+" USDT";
+      withdrawnEl.innerText = totalWithdrawn.toFixed(2)+" USDT";
+      totalEl.innerText = totalGains.toFixed(2)+" USDT";
+    }
+  });
+
+  loadWithdrawHistory(true);
+});
+
+// Historique
+function loadWithdrawHistory(initial=true){
+  let query = db.collection("withdrawals")
+    .where("userId","==",auth.currentUser.uid)
+    .orderBy("createdAt","desc")
+    .limit(historyLimit);
+    
+  if(!initial && lastVisible) query = query.startAfter(lastVisible);
+
+  query.get().then(snapshot=>{
+    if(initial) historyListEl.innerHTML="";
+    snapshot.forEach(doc=>{
+      const tx = doc.data();
+      const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
+      const status = tx.status || "Pending";
+      const icon = status==="Approved"?"✅":status==="Rejected"?"❌":"⏳";
+      const li = document.createElement("li");
+      li.className="status-"+status;
+      li.innerHTML=`<span>${date} | ${tx.amount} USDT | ${icon}</span>
+                    <span>${tx.address} <i class="fa fa-copy copy-btn" onclick="navigator.clipboard.writeText('${tx.address}')"></i></span>`;
+      historyListEl.appendChild(li);
+    });
+    lastVisible = snapshot.docs[snapshot.docs.length-1];
+  });
+}
+
+seeMoreBtn.addEventListener("click",()=>loadWithdrawHistory(false));
+
+// Calcul frais
+function updateFee(){
+  const amt = parseFloat(amountEl.value) || 0;
+  if(amt<3){ feeTextEl.innerText="Montant minimum : 3 USDT"; return; }
+  if(amt>balanceAvailable){ feeTextEl.innerText="Montant supérieur au solde disponible !"; return; }
+  const fee = amt*0.05, net=amt-fee;
+  feeTextEl.innerText=`Frais (5%) : ${fee.toFixed(2)} USDT | Net à recevoir : ${net.toFixed(2)} USDT`;
+}
+amountEl.addEventListener("input",updateFee);
+
+// Demande retrait
+document.getElementById("withdraw-btn").addEventListener("click", async()=>{
+  messageEl.innerText="";
+  const amt = parseFloat(amountEl.value);
+  const network = document.getElementById("network").value;
+  const address = document.getElementById("address").value.trim();
+
+  if(!amt || amt<3){ messageEl.innerText="❌ Le montant minimum est 3 USDT"; messageEl.className="msg error"; return;}
+  if(amt>balanceAvailable){ messageEl.innerText="❌ Montant supérieur au solde disponible !"; messageEl.className="msg error"; return;}
+  if(!address){ messageEl.innerText="❌ Veuillez entrer une adresse de retrait valide."; messageEl.className="msg error"; return;}
+
+  const fee = amt*0.05, net=amt-fee;
+
+  try{
+    const txRef = db.collection("withdrawals").doc();
+    await txRef.set({
+      userId: auth.currentUser.uid,
+      amount: amt,
+      fee: fee,
+      netReceived: net,
+      network: network,
+      address: address,
+      status:"Pending", // ⏳ en attente
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Bloquer le solde immédiatement
+    const userRef = db.collection("users").doc(auth.currentUser.uid);
+    await userRef.update({
+      "wallet.balance": balanceAvailable - amt
+    });
+
+    messageEl.innerText="⏳ Retrait en attente de validation par l'admin.";
+    messageEl.className="msg success";
+    amountEl.value=""; updateFee(); loadWithdrawHistory(true);
+
+  }catch(e){
+    messageEl.innerText=`❌ Erreur : ${e.message}`;
+    messageEl.className="msg error"; console.error(e);
+  }
+});
+</script>
+</body>
+</html>
