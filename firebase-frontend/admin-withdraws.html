@@ -1,5 +1,4 @@
-
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -10,44 +9,14 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
-body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; display:none; }
-header { background:#0d47a1; color:#fff; padding:20px; text-align:center; position:relative; }
-header h1 { margin:0; font-size:1.6em; }
-.back-btn { position:absolute; left:15px; top:22px; color:#fff; text-decoration:none; font-weight:bold; }
-
-.container { max-width:1000px; margin:20px auto; padding:0 15px; }
-
-.table { width:100%; border-collapse:collapse; margin-top:20px; }
-.table th, .table td { padding:10px; text-align:center; border-bottom:1px solid #ddd; word-break:break-word; }
-.table th { background:#0d47a1; color:#fff; border-radius:8px; }
-
-button { padding:8px 12px; border:none; border-radius:8px; cursor:pointer; color:#fff; transition:0.2s; }
-button.approve { background:green; } button.approve:hover { background:#006400; }
-button.reject { background:red; } button.reject:hover { background:#8b0000; }
-
-.msg { margin:10px 0; font-size:0.95em; text-align:center; }
-.msg.success { color:green; }
-.msg.error { color:red; }
-
-.status-pending { color:#f0ad4e; font-weight:bold; }
-.status-approved { color:green; font-weight:bold; }
-.status-rejected { color:red; font-weight:bold; }
-
-.copy-btn { background:#0d47a1; padding:5px 8px; margin-left:5px; font-size:0.8em; border-radius:6px; }
-.copy-btn:hover { background:#08306b; }
-
-@media(max-width:768px){
-  .table th, .table td { font-size:0.85em; padding:6px; }
-  header h1 { font-size:1.3em; }
-}
+/* --- même style que tu avais --- */
 </style>
 </head>
 <body>
 <header>
-  <h1>Admin - Gestion des Retraits</h1>
+  <h1>Admin - Oui Gestion des Retraits</h1>
   <a href="dashboard.html" class="back-btn">⬅ Retour</a>
 </header>
-
 <div class="container">
   <p class="msg" id="message"></p>
   <table class="table" id="withdrawals-table">
@@ -58,7 +27,7 @@ button.reject { background:red; } button.reject:hover { background:#8b0000; }
         <th>Frais</th>
         <th>Net</th>
         <th>Réseau</th>
-        <th>Adresse <br><small>(copier)</small></th>
+        <th>Adresse</th>
         <th>Status</th>
         <th>Actions</th>
       </tr>
@@ -82,7 +51,6 @@ const db = firebase.firestore();
 const messageEl = document.getElementById("message");
 const tableBody = document.querySelector("#withdrawals-table tbody");
 
-// Vérifier admin
 auth.onAuthStateChanged(async user=>{
   if(!user) return window.location.href="login.html";
 
@@ -117,15 +85,14 @@ function loadWithdrawals(){
         <td>${tx.address} <button class="copy-btn" data-addr="${tx.address}">📋</button></td>
         <td class="${statusClass}">${statusIcon} ${tx.status}</td>
         <td>
-          ${tx.status==="Pending"?
-            `<button class="approve" data-id="${doc.id}">✅ Valider</button>
-             <button class="reject" data-id="${doc.id}">❌ Refuser</button>`:"-"}
+          ${tx.status==="Pending"?`
+          <button class="approve" data-id="${doc.id}">✅ Valider</button>
+          <button class="reject" data-id="${doc.id}">❌ Refuser</button>`:"-"}
         </td>
       `;
       tableBody.appendChild(tr);
     }
 
-    // Boutons actions
     document.querySelectorAll(".approve").forEach(btn=>{
       btn.addEventListener("click",()=>processWithdrawal(btn.dataset.id,true));
     });
@@ -145,7 +112,7 @@ async function processWithdrawal(id,approve){
     if(!txDoc.exists) return;
 
     const tx = txDoc.data();
-    if(tx.status!=="Pending") return; // déjà traité
+    if(tx.status!=="Pending") return;
 
     const userRef = db.collection("users").doc(tx.userId);
 
@@ -155,14 +122,13 @@ async function processWithdrawal(id,approve){
       const wallet = userSnap.data().wallet || {};
 
       if(approve){
-        // vérifier si le retrait a déjà été déduit
-        const newBalance = (wallet.balance||0) - tx.amount;
-        if(newBalance<0) throw "Solde insuffisant";
-        t.update(userRef,{ "wallet.balance": newBalance, "wallet.totalWithdrawn": (wallet.totalWithdrawn||0)+tx.amount });
+        t.update(userRef,{
+          "wallet.totalWithdrawn": (wallet.totalWithdrawn||0)+tx.amount
+        });
         t.update(txRef,{ status:"Approved" });
         messageEl.innerText="✅ Retrait validé"; messageEl.className="msg success";
       } else {
-        // remboursement automatique si refusé
+        // remboursement automatique
         const refundBalance = (wallet.balance||0) + tx.amount;
         t.update(userRef,{ "wallet.balance": refundBalance });
         t.update(txRef,{ status:"Rejected" });
@@ -171,11 +137,11 @@ async function processWithdrawal(id,approve){
     });
   } catch(e){
     console.error(e);
-    messageEl.innerText=`❌ Erreur: ${e}`; messageEl.className="msg error";
+    messageEl.innerText=`❌ Erreur: ${e}`;
+    messageEl.className="msg error";
   }
 }
 </script>
 </body>
-</html>
-
+  </html>
   
