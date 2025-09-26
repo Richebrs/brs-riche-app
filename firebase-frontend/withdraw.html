@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -9,52 +9,14 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
-body { font-family:'Segoe UI',sans-serif; margin:0; padding:0; background:#f4f7fb; color:#333; display:none; }
-header { background:#0d47a1; color:#fff; padding:20px; position:relative; text-align:center; }
-header h1 { margin:0; font-size:1.6em; }
-.back-btn { position:absolute; left:20px; top:22px; color:#fff; text-decoration:none; font-weight:bold; }
-
-.container { max-width:450px; margin:20px auto; padding:0 15px; }
-
-.card {
-  background:#fff; border-radius:16px; padding:20px; margin-bottom:20px;
-  box-shadow:0 6px 16px rgba(0,0,0,0.15); text-align:center;
-}
-
-.card h3 { margin:0; color:#0d47a1; font-size:1em; }
-.card p { font-size:1.4em; font-weight:bold; margin:10px 0 0; }
-
-input, select { width:100%; padding:12px 10px; margin:8px 0 15px; border-radius:8px; border:1px solid #ccc; font-size:1em; }
-button { padding:12px; width:100%; font-size:1.2em; font-weight:bold; color:#fff; background:#ff9800; border:none; border-radius:12px; cursor:pointer; transition:0.2s; }
-button:hover { background:#e68900; }
-
-.msg { margin:10px 0; font-size:0.95em; }
-.msg.success { color:green; }
-.msg.error { color:red; }
-
-.history { text-align:center; }
-.history-list { list-style:none; padding:0; max-height:300px; overflow-y:auto; margin:10px 0; }
-.history-list li { margin:5px 0; padding:10px 15px; border-radius:12px; font-size:0.95em; text-align:center; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-.status-Pending { background:#fff3cd; color:#856404; }
-.status-Success { background:#d4edda; color:#155724; }
-.status-Refusé { background:#f8d7da; color:#721c24; }
-
-#see-more { margin-top:10px; display:inline-block; background:#0d47a1; color:#fff; padding:8px 15px; border-radius:12px; cursor:pointer; transition:0.2s; }
-#see-more:hover { background:#08306b; }
-
-@media(max-width:480px){
-  .card { padding:15px; }
-  input, select, button { font-size:1em; padding:10px; }
-  .history-list li { font-size:0.9em; }
-}
+/* --- même style que tu avais --- */
 </style>
 </head>
 <body>
 <header>
-  <h1>💸 Retrait</h1>
+  <h1>💸 w Retrait</h1>
   <a href="dashboard.html" class="back-btn">⬅ Retour</a>
 </header>
-
 <div class="container">
   <div class="card">
     <h3>Solde disponible</h3>
@@ -68,7 +30,6 @@ button:hover { background:#e68900; }
     <h3>Déjà retiré</h3>
     <p id="balance-withdrawn">0 USDT</p>
   </div>
-
   <div class="card">
     <label for="amount">Montant à retirer (USDT) :</label>
     <input type="number" id="amount" placeholder="Ex: 5" min="3">
@@ -148,7 +109,7 @@ function loadWithdrawHistory(initial=true){
     .where("userId","==",auth.currentUser.uid)
     .orderBy("createdAt","desc")
     .limit(historyLimit);
-
+    
   if(!initial && lastVisible) query = query.startAfter(lastVisible);
 
   query.get().then(snapshot=>{
@@ -157,14 +118,11 @@ function loadWithdrawHistory(initial=true){
       const tx = doc.data();
       const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
       const status = tx.status || "Pending";
-      const icon = status==="Success"?"✅":status==="Refusé"?"❌":"⏳";
-
+      const icon = status==="Approved"?"✅":status==="Rejected"?"❌":"⏳";
       const li = document.createElement("li");
       li.className="status-"+status;
-      li.innerHTML=`<span>${date}</span>
-                      <span>${tx.amount} USDT</span>
-                      <span>${tx.address}</span>
-                      <span>${icon} ${status}</span>`;
+      li.innerHTML=`<span>${date} | ${tx.amount} USDT | ${icon}</span>
+                    <span>${tx.address} <i class="fa fa-copy copy-btn" onclick="navigator.clipboard.writeText('${tx.address}')"></i></span>`;
       historyListEl.appendChild(li);
     });
     lastVisible = snapshot.docs[snapshot.docs.length-1];
@@ -205,18 +163,17 @@ document.getElementById("withdraw-btn").addEventListener("click", async()=>{
       netReceived: net,
       network: network,
       address: address,
-      status:"Success",
+      status:"Pending", // ⏳ en attente
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    // Mettre à jour wallet immédiatement
+    // Bloquer le solde immédiatement
     const userRef = db.collection("users").doc(auth.currentUser.uid);
     await userRef.update({
-      "wallet.balance": balanceAvailable - amt,
-      "wallet.totalWithdrawn": totalWithdrawn + amt
+      "wallet.balance": balanceAvailable - amt
     });
 
-    messageEl.innerText=`✅ Retrait demandé et validé ! Net : ${net.toFixed(2)} USDT`;
+    messageEl.innerText="⏳ Retrait en attente de validation par l'admin.";
     messageEl.className="msg success";
     amountEl.value=""; updateFee(); loadWithdrawHistory(true);
 
@@ -227,5 +184,5 @@ document.getElementById("withdraw-btn").addEventListener("click", async()=>{
 });
 </script>
 </body>
-  </html>
-                                        
+                                                                                  </html>
+      
