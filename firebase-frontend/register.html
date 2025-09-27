@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -6,59 +6,61 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <style>
-body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  margin:0; padding:0;
-  background: linear-gradient(135deg,#0d47a1,#1976d2);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
-#register-container {
-  background: #fff;
-  padding: 40px 32px;
-  border-radius: 20px;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.25);
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-}
-h1 { color: #0d47a1; margin-bottom: 20px; font-size: 2em; }
-input[type="text"], input[type="email"], input[type="password"] {
-  width: 100%;
-  padding: 12px 14px;
-  margin: 8px 0 4px 0;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  font-size: 1em;
-}
-input:focus { border-color: #1976d2; outline: none; }
-.password-container { position: relative; }
-.password-container i {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  cursor: pointer;
-  color: #555;
-}
-button {
-  background: #ffcc00;
-  color: #0d47a1;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-weight: bold;
-  cursor: pointer;
-  width: 100%;
-  margin-top: 16px;
-}
-button:hover { background: #ffd633; }
-#message { margin-top: 12px; font-weight: bold; }
-.success { color: green; }
-.error { color: red; }
-a { display:block; margin-top:12px; color:#1976d2; text-decoration:none; }
-a:hover { text-decoration: underline; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin:0; padding:0;
+    background: linear-gradient(135deg,#0d47a1,#1976d2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  #register-container {
+    background: #fff;
+    padding: 40px 32px;
+    border-radius: 20px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  h1 { color: #0d47a1; margin-bottom: 20px; font-size: 2em; }
+  input[type="text"], input[type="email"], input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    margin: 8px 0 12px 0;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 1em;
+    box-sizing: border-box;
+  }
+  input:focus { border-color: #1976d2; outline: none; }
+  .password-container { position: relative; }
+  .password-container i {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    cursor: pointer;
+    color: #555;
+  }
+  button {
+    background: #ffcc00;
+    color: #0d47a1;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 16px;
+  }
+  button:hover { background: #ffd633; }
+  #message { margin-top: 12px; font-weight: bold; min-height: 20px; }
+  .success { color: green; }
+  .error { color: red; }
+  a { display:block; margin-top:12px; color:#1976d2; text-decoration:none; }
+  a:hover { text-decoration: underline; }
 </style>
 
 <!-- Firebase -->
@@ -122,9 +124,7 @@ toggleConfirmPassword.addEventListener('click', () => {
 // 🔹 Pré-remplir le code de parrainage depuis l'URL
 const urlParams = new URLSearchParams(window.location.search);
 const refCodeFromURL = urlParams.get('ref');
-if(refCodeFromURL) {
-  referralInput.value = refCodeFromURL;
-}
+if(refCodeFromURL) referralInput.value = refCodeFromURL;
 
 // 🔹 Fonction inscription
 form.addEventListener('submit', async (e) => {
@@ -137,34 +137,35 @@ form.addEventListener('submit', async (e) => {
   const confirmPassword = confirmPasswordInput.value;
   const referralCode = referralInput.value.trim();
 
-  if (password !== confirmPassword) {
+  if(password !== confirmPassword){
     message.textContent = "❌ Les mots de passe ne correspondent pas !";
     message.className = 'error';
     return;
   }
 
   try {
-    // Création du compte
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const uid = userCredential.user.uid;
 
-    // Création du document Firestore
+    // 🔹 Création automatique du code de parrainage pour cet utilisateur
+    const myReferralCode = "BRS-" + uid.slice(0,6).toUpperCase();
+
     await db.collection('users').doc(uid).set({
       username: username || null,
       email: email,
       referralCode: referralCode || null,
+      myReferralCode: myReferralCode,
       role: "user",
       createdAt: new Date(),
       wallet: { balance: 0, totalGains: 0, totalWithdrawn: 0 }
     });
 
-    message.textContent = "✅ Compte créé avec succès !";
+    message.textContent = "✅ Compte créé avec succès ! Votre code de parrainage : " + myReferralCode;
     message.className = 'success';
 
-    // Redirection après inscription
-    setTimeout(() => { window.location.href = "dashboard.html"; }, 1500);
+    setTimeout(()=>{ window.location.href = "dashboard.html"; }, 1500);
 
-  } catch (err) {
+  } catch(err){
     console.error(err);
     message.textContent = "❌ " + err.message;
     message.className = 'error';
@@ -172,5 +173,6 @@ form.addEventListener('submit', async (e) => {
 });
 </script>
 </body>
-    </html>
-  
+</html>
+
+      
