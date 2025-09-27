@@ -1,150 +1,208 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>💸 Demande de Retrait</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<meta charset="UTF-8">
+<title>Retrait - BRS Riche</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+body {
+  font-family:'Segoe UI',sans-serif; margin:0; padding:0;
+  background:#f4f7fb; color:#333; display:none; text-align:center;
+}
+header {
+  background:#0d47a1; color:#fff; padding:20px; position:relative;
+}
+header h1 { margin:0; font-size:1.6em; }
+.back-btn {
+  position:absolute; left:15px; top:20px;
+  color:#fff; text-decoration:none; font-weight:bold;
+}
+.container {
+  margin:20px auto; max-width:450px; background:#fff;
+  padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15);
+}
+.balance-box { margin-bottom:15px; }
+.balance-box h3 { margin:0; font-size:1em; color:#0d47a1; }
+.balance-box p { margin:5px 0 0; font-size:1.4em; font-weight:bold; }
+input, select { width:100%; padding:12px 10px; margin:8px 0 15px; border-radius:8px; border:1px solid #ccc; font-size:1em; }
+button { padding:12px; width:100%; font-size:1.2em; font-weight:bold; color:#fff; background:#ff9800; border:none; border-radius:12px; cursor:pointer; transition:background 0.2s; }
+button:hover { background:#e68900; }
+.msg { margin:10px 0; font-size:0.95em; }
+.success { color:green; }
+.error { color:red; }
+.history { margin-top:30px; text-align:center; }
+.history h3 { margin-bottom:10px; color:#0d47a1; }
+.history-list { list-style:none; padding:0; max-height:250px; overflow-y:auto; }
+.history-list li {
+  margin:5px 0; padding:8px; border-radius:8px;
+  font-size:0.95em; display:flex; justify-content:space-between; align-items:center;
+}
+.status-pending { background:#fff3cd; color:#856404; }
+.status-success { background:#d4edda; color:#155724; }
+.status-failed { background:#f8d7da; color:#721c24; }
+.copy-btn { cursor:pointer; color:#0d47a1; margin-left:5px; }
+</style>
 </head>
-<body class="bg-gray-100">
-  <div class="max-w-md mx-auto mt-6 p-4 bg-white rounded-xl shadow-lg">
-    <h2 class="text-xl font-bold mb-4">💸 Demande de Retrait</h2>
-    <a href="dashboard.html" class="text-blue-500 text-sm">⬅ Retour</a>
+<body>
+<header>
+  <h1>💸 Oui Demande de Retrait</h1>
+  <a href="dashboard.html" class="back-btn">⬅ Retour</a>
+</header>
 
-    <div id="walletInfo" class="my-4 text-center"></div>
+<div class="container">
+  <div class="balance-box"><h3>Solde disponible</h3><p id="balance-available">0 USDT</p></div>
+  <div class="balance-box"><h3>Gains totaux</h3><p id="balance-total">0 USDT</p></div>
+  <div class="balance-box"><h3>Déjà retiré</h3><p id="balance-withdrawn">0 USDT</p></div>
 
-    <form id="withdrawForm" class="space-y-3">
-      <input type="number" id="amount" placeholder="Montant à retirer (USDT)" class="w-full border p-2 rounded">
-      <select id="network" class="w-full border p-2 rounded">
-        <option>USDT TRC20</option>
-        <option>USDT ERC20</option>
-      </select>
-      <input type="text" id="address" placeholder="Adresse de retrait" class="w-full border p-2 rounded">
-      <button type="submit" class="w-full bg-green-500 text-white p-2 rounded">📤 Demander un retrait</button>
-    </form>
+  <label for="amount">Montant à retirer (USDT) :</label>
+  <input type="number" id="amount" placeholder="Ex: 5" min="3">
 
-    <p id="message" class="mt-3 text-center"></p>
+  <label for="network">Réseau :</label>
+  <select id="network">
+    <option value="TRC20">USDT TRC20</option>
+    <option value="BEP20">USDT BEP20</option>
+  </select>
+
+  <label for="address">Adresse de retrait :</label>
+  <input type="text" id="address" placeholder="Votre adresse USDT">
+  <span class="copy-btn" id="copy-address"><i class="fa fa-copy"></i> Copier</span>
+
+  <p class="msg" id="fee-text">Frais (5%) : 0 USDT | Net à recevoir : 0 USDT</p>
+  <button id="withdraw-btn">📤 Demander un retrait</button>
+  <p class="msg" id="message"></p>
+
+  <div class="history">
+    <h3>Historique des retraits</h3>
+    <ul class="history-list" id="history-list"></ul>
   </div>
+</div>
 
-  <!-- Historique -->
-  <div class="max-w-md mx-auto mt-6 p-4 bg-white rounded-xl shadow-lg">
-    <h3 class="text-lg font-bold mb-3 text-center">📜 Historique des retraits</h3>
-    <div id="withdrawalsHistory" class="space-y-2"></div>
-    <button id="viewMore" class="hidden text-blue-500 mt-2">Voir plus</button>
-  </div>
+<script>
+document.body.style.display = "block";
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "XXX",
-      authDomain: "XXX",
-      projectId: "XXX",
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+const firebaseConfig = {
+  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+  authDomain: "brs-riche-2.firebaseapp.com",
+  projectId: "brs-riche-2"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-    const walletInfo = document.getElementById("walletInfo");
-    const message = document.getElementById("message");
-    const historyDiv = document.getElementById("withdrawalsHistory");
-    const viewMoreBtn = document.getElementById("viewMore");
+let balanceAvailable = 0;
+let totalGains = 0;
+let totalWithdrawn = 0;
 
-    let userId = null;
-    let balance = 0, totalEarned = 0, totalWithdrawn = 0;
+const balanceEl = document.getElementById("balance-available");
+const totalEl = document.getElementById("balance-total");
+const withdrawnEl = document.getElementById("balance-withdrawn");
+const amountEl = document.getElementById("amount");
+const feeTextEl = document.getElementById("fee-text");
+const messageEl = document.getElementById("message");
+const historyListEl = document.getElementById("history-list");
+const copyBtn = document.getElementById("copy-address");
+const addressEl = document.getElementById("address");
 
-    // Affiche solde
-    function renderWallet() {
-      walletInfo.innerHTML = `
-        <p>Solde disponible: <b>${balance.toFixed(2)} USDT</b></p>
-        <p>Gains totaux: <b>${totalEarned.toFixed(2)} USDT</b></p>
-        <p>Déjà retiré: <b>${totalWithdrawn.toFixed(2)} USDT</b></p>
-      `;
+auth.onAuthStateChanged(user => {
+  if (!user) return window.location.href = "login.html";
+  const userRef = db.collection("users").doc(user.uid);
+
+  userRef.onSnapshot(doc => {
+    if (doc.exists) {
+      const data = doc.data();
+      const wallet = data.wallet || {};
+      balanceAvailable = wallet.balance ?? 0;
+      totalWithdrawn = wallet.totalWithdrawn ?? 0;
+      totalGains = wallet.totalGains ?? (balanceAvailable + totalWithdrawn);
+
+      balanceEl.innerText = `${balanceAvailable.toFixed(2)} USDT`;
+      withdrawnEl.innerText = `${totalWithdrawn.toFixed(2)} USDT`;
+      totalEl.innerText = `${totalGains.toFixed(2)} USDT`;
     }
+  });
 
-    // Historique retraits
-    function loadHistory(limit = 5) {
-      db.collection("withdrawals")
-        .where("userId", "==", userId)
-        .orderBy("createdAt", "desc")
-        .limit(limit)
-        .onSnapshot(snapshot => {
-          historyDiv.innerHTML = "";
-          snapshot.forEach(doc => {
-            const w = doc.data();
-            let color = w.status === "success" ? "text-green-600" :
-                        w.status === "refused" ? "text-red-600" :
-                        "text-yellow-600";
-            historyDiv.innerHTML += `
-              <div class="p-2 border rounded flex justify-between items-center">
-                <span>${w.amount} USDT</span>
-                <span class="${color} font-bold">${w.status}</span>
-              </div>
-            `;
-          });
-        });
-    }
+  db.collection("withdrawals")
+    .where("userId","==",user.uid)
+    .orderBy("createdAt","desc").limit(5)
+    .onSnapshot(snapshot => {
+      historyListEl.innerHTML = "";
+      snapshot.forEach(doc => {
+        const tx = doc.data();
+        const status = tx.status || "Pending";
+        let statusClass = status === "Pending" ? "status-pending" :
+                          status === "Success" ? "status-success" :
+                          "status-failed";
+        const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
+        historyListEl.innerHTML += `<li class="${statusClass}">
+          <span>${date} | ${tx.amount} USDT | ${status}</span>
+          <span>${tx.address}<i class="copy-btn" onclick="navigator.clipboard.writeText('${tx.address}')"><i class="fa fa-copy"></i></i></span>
+        </li>`;
+      });
+    });
+});
 
-    // Lancer un retrait
-    document.getElementById("withdrawForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const amount = parseFloat(document.getElementById("amount").value);
-      const network = document.getElementById("network").value;
-      const address = document.getElementById("address").value;
+// 🔹 Calcul frais
+function updateFee(){
+  const amt = parseFloat(amountEl.value) || 0;
+  if(amt < 3){ feeTextEl.innerText = "Montant minimum : 3 USDT"; return; }
+  if(amt > balanceAvailable){ feeTextEl.innerText = "Montant supérieur au solde disponible !"; return; }
+  const fee = amt * 0.05;
+  const net = amt - fee;
+  feeTextEl.innerText = `Frais (5%) : ${fee.toFixed(2)} USDT | Net à recevoir : ${net.toFixed(2)} USDT`;
+}
+amountEl.addEventListener("input", updateFee);
 
-      if (isNaN(amount) || amount <= 0 || amount > balance) {
-        message.textContent = "❌ Montant invalide.";
-        message.className = "text-red-500 text-center";
-        return;
-      }
+copyBtn.addEventListener("click", () => {
+  const val = addressEl.value.trim();
+  if(val) navigator.clipboard.writeText(val).then(() => alert("Adresse copiée !"));
+});
 
-      try {
-        // Déduit directement du solde
-        await db.collection("wallets").doc(userId).update({
-          balance: firebase.firestore.FieldValue.increment(-amount)
-        });
+// 🔹 Retrait
+document.getElementById("withdraw-btn").addEventListener("click", async () => {
+  messageEl.innerText = "";
+  const amt = parseFloat(amountEl.value);
+  const network = document.getElementById("network").value;
+  const address = addressEl.value.trim();
+  if(!amt || amt < 3){ messageEl.innerText="❌ Montant minimum 3 USDT"; messageEl.className="msg error"; return; }
+  if(amt > balanceAvailable){ messageEl.innerText="❌ Montant supérieur au solde disponible !"; messageEl.className="msg error"; return; }
+  if(!address){ messageEl.innerText="❌ Adresse invalide"; messageEl.className="msg error"; return; }
 
-        // Crée la demande en attente
-        await db.collection("withdrawals").add({
-          userId,
-          amount,
-          network,
-          address,
-          status: "pending",
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+  const fee = amt*0.05;
+  const net = amt-fee;
 
-        message.textContent = "✅ Retrait demandé avec succès (en attente de validation).";
-        message.className = "text-green-500 text-center";
-        document.getElementById("withdrawForm").reset();
-
-      } catch (err) {
-        console.error(err);
-        message.textContent = "❌ Erreur lors de la demande.";
-        message.className = "text-red-500 text-center";
-      }
+  try{
+    const txRef = db.collection("withdrawals").doc();
+    await txRef.set({
+      userId: auth.currentUser.uid,
+      amount: amt,
+      fee: fee,
+      netReceived: net,
+      network: network,
+      address: address,
+      status: "Pending",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        userId = user.uid;
-        db.collection("wallets").doc(userId).onSnapshot(doc => {
-          if (doc.exists) {
-            balance = doc.data().balance || 0;
-            totalEarned = doc.data().totalEarned || 0;
-            totalWithdrawn = doc.data().totalWithdrawn || 0;
-            renderWallet();
-          }
-        });
-        loadHistory();
-      } else {
-        window.location.href = "login.html";
-      }
+    const userRef = db.collection("users").doc(auth.currentUser.uid);
+    await userRef.update({
+      "wallet.balance": balanceAvailable-amt,
+      "wallet.totalWithdrawn": totalWithdrawn+amt
     });
-  </script>
+
+    messageEl.innerText = `✅ Retrait demandé ! Net : ${net.toFixed(2)} USDT`;
+    messageEl.className = "msg success";
+
+    amountEl.value=""; updateFee();
+  }catch(e){
+    messageEl.innerText=`❌ Erreur : ${e.message}`; messageEl.className="msg error"; console.error(e);
+  }
+});
+</script>
 </body>
-</html>
-
-  
+                                                 </html>
+    
