@@ -2,77 +2,39 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Parrainage - BRS Riche</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<title>Parrainage - BRS RICHE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin:0; padding:0;
+  background: linear-gradient(135deg,#0d47a1,#1976d2);
+  display: flex; justify-content: center; align-items: center; min-height: 100vh;
+  color:#333;
+}
+#referral-container {
+  background:#fff; padding:30px 24px; border-radius:20px; max-width:500px; width:95%;
+  text-align:center; box-shadow:0 8px 28px rgba(0,0,0,0.25);
+}
+h1 { color:#0d47a1; margin-bottom:20px; font-size:2em; }
+p { margin:10px 0; }
+.link-box { background:#f4f7fb; padding:10px; border-radius:10px; display:flex; justify-content:center; align-items:center; word-break:break-all; margin:10px 0; }
+.copy-btn { cursor:pointer; margin-left:10px; color:#0d47a1; }
+.table { width:100%; margin-top:20px; border-collapse:collapse; }
+.table th, .table td { border:1px solid #ccc; padding:8px; text-align:center; }
+.table th { background:#0d47a1; color:#fff; }
+.motiv-text { font-size:0.9em; color:#555; margin-top:20px; }
+.success { color:green; }
+.none { color:#888; font-style:italic; }
+</style>
+
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<style>
-body {font-family:'Segoe UI',sans-serif;margin:0;padding:0;background:#f4f7fb;color:#333;display:none;}
-header {background:#0d47a1;color:#fff;padding:20px;position:relative;text-align:center;}
-header h1 {margin:0;font-size:1.6em;}
-.back-btn {position:absolute;left:15px;top:20px;color:#fff;text-decoration:none;font-weight:bold;}
-.container {margin:20px auto;max-width:500px;background:#fff;padding:20px;border-radius:16px;box-shadow:0 6px 16px rgba(0,0,0,0.15);}
-h2 {color:#0d47a1;}
-.invite-box {background:#eef4ff;padding:12px;border-radius:12px;margin-bottom:20px;text-align:center;}
-.invite-link {font-weight:bold;color:#0d47a1;word-break:break-all;}
-.copy-btn {cursor:pointer;margin-left:5px;color:#0d47a1;}
-.stats {display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:20px 0;}
-.stat-box {background:#f9f9f9;padding:15px;border-radius:12px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,0.1);}
-.stat-box h3 {margin:0;font-size:1em;color:#555;}
-.stat-box p {margin:5px 0 0;font-size:1.3em;font-weight:bold;color:#0d47a1;}
-.history {margin-top:25px;}
-.history h3 {margin-bottom:10px;color:#0d47a1;}
-.history-list {list-style:none;padding:0;max-height:250px;overflow-y:auto;}
-.history-list li {padding:8px;border-bottom:1px solid #ddd;font-size:0.95em;display:flex;justify-content:space-between;}
-.level-1 {color:#2e7d32;font-weight:bold;}
-.level-2 {color:#f57c00;font-weight:bold;}
-.level-3 {color:#6a1b9a;font-weight:bold;}
-</style>
-</head>
-<body>
-<header>
-  <h1>🎁 Parrainage</h1>
-  <a href="dashboard.html" class="back-btn">⬅ Retour</a>
-</header>
-
-<div class="container">
-  <h2>Programme de Parrainage</h2>
-  <p>Invitez vos amis et gagnez automatiquement :</p>
-  <ul>
-    <li><b>Niveau 1</b> : 20% des achats de vos filleuls directs</li>
-    <li><b>Niveau 2</b> : 2.5% des filleuls de vos filleuls</li>
-    <li><b>Niveau 3</b> : 2.5% encore au 3e niveau</li>
-  </ul>
-  <p>Les bonus sont <b>automatiquement ajoutés</b> à votre solde.</p>
-
-  <div class="invite-box">
-    <p>Votre lien d'invitation :</p>
-    <p class="invite-link" id="invite-link">Chargement...</p>
-    <span class="copy-btn" id="copy-link"><i class="fa fa-copy"></i> Copier</span>
-  </div>
-
-  <div class="stats">
-    <div class="stat-box">
-      <h3>Gains via Parrainage</h3>
-      <p id="referral-gains">0 USDT</p>
-    </div>
-    <div class="stat-box">
-      <h3>Solde disponible</h3>
-      <p id="wallet-balance">0 USDT</p>
-    </div>
-  </div>
-
-  <div class="history">
-    <h3>Historique des Bonus</h3>
-    <ul class="history-list" id="history-list"></ul>
-  </div>
-</div>
 
 <script>
-document.body.style.display = "block";
-
 const firebaseConfig = {
   apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
   authDomain: "brs-riche-2.firebaseapp.com",
@@ -81,56 +43,96 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+</script>
+</head>
 
-const linkEl = document.getElementById("invite-link");
-const copyBtn = document.getElementById("copy-link");
-const balanceEl = document.getElementById("wallet-balance");
-const gainsEl = document.getElementById("referral-gains");
-const historyListEl = document.getElementById("history-list");
+<body>
+<div id="referral-container">
+  <h1>🌟 Parrainage</h1>
+  <p>Partagez votre lien et gagnez automatiquement des bonus sur les achats de vos filleuls !</p>
 
-auth.onAuthStateChanged(async user => {
-  if (!user) return window.location.href = "login.html";
-  const userRef = db.collection("users").doc(user.uid);
+  <div class="link-box">
+    <span id="referral-link">Chargement...</span>
+    <i class="fa fa-copy copy-btn" id="copyReferral"></i>
+  </div>
 
-  userRef.onSnapshot(doc => {
-    if (doc.exists) {
-      const data = doc.data();
-      const wallet = data.wallet || {};
-      const referralCode = data.referralCode || user.uid.substring(0,6);
+  <p>Vos gains cumulés grâce au parrainage : <span class="success" id="totalGains">0 USDT</span></p>
 
-      // Générer un lien
-      const inviteLink = `${window.location.origin}/register.html?ref=${referralCode}`;
-      linkEl.innerText = inviteLink;
+  <table class="table" id="referralTable">
+    <thead>
+      <tr>
+        <th>Niveau</th>
+        <th>Filleul</th>
+        <th>Email</th>
+        <th>Bonus Reçu (USDT)</th>
+      </tr>
+    </thead>
+    <tbody id="referralBody">
+      <tr><td colspan="4" class="none">Chargement...</td></tr>
+    </tbody>
+  </table>
 
-      // Solde et gains
-      balanceEl.innerText = `${(wallet.balance||0).toFixed(2)} USDT`;
-      gainsEl.innerText = `${(wallet.totalGains||0).toFixed(2)} USDT`;
+  <p class="motiv-text" id="motivText">Invitez vos amis et gagnez jusqu’à 20% sur leurs achats ! 🚀</p>
+</div>
+
+<script>
+auth.onAuthStateChanged(async user=>{
+  if(!user) return window.location.href="login.html";
+  const uid = user.uid;
+  const userRef = db.collection('users').doc(uid);
+
+  userRef.onSnapshot(async doc=>{
+    if(!doc.exists) return;
+    const data = doc.data();
+    const myCode = data.myReferralCode || "BRS-XXXX";
+    const sponsors = [data.sponsor1, data.sponsor2, data.sponsor3];
+    const wallet = data.wallet || {};
+    const totalGainsEl = document.getElementById("totalGains");
+    totalGainsEl.innerText = (wallet.totalGains || 0).toFixed(2) + " USDT";
+
+    // Afficher lien de parrainage
+    const linkEl = document.getElementById("referral-link");
+    const link = `${window.location.origin}/register.html?ref=${myCode}`;
+    linkEl.innerText = link;
+
+    document.getElementById("copyReferral").addEventListener("click",()=>{
+      navigator.clipboard.writeText(link).then(()=>alert("Lien copié !"));
+    });
+
+    // Récupérer les filleuls
+    const tbody = document.getElementById("referralBody");
+    tbody.innerHTML=""; // reset
+
+    const filleuls = [];
+    const querySnap = await db.collection("users").where("sponsor1","==",uid).get();
+    querySnap.forEach(f=>filleuls.push({level:1,id:f.id,...f.data()}));
+    const querySnap2 = await db.collection("users").where("sponsor2","==",uid).get();
+    querySnap2.forEach(f=>filleuls.push({level:2,id:f.id,...f.data()}));
+    const querySnap3 = await db.collection("users").where("sponsor3","==",uid).get();
+    querySnap3.forEach(f=>filleuls.push({level:3,id:f.id,...f.data()}));
+
+    if(filleuls.length===0){
+      tbody.innerHTML=`<tr><td colspan="4" class="none">Vous n’avez encore aucun filleul. Invitez vos amis pour commencer à gagner !</td></tr>`;
+    } else {
+      for(const f of filleuls){
+        // Bonus reçu
+        const bonusSnap = await db.collection("referralBonuses")
+          .where("fromUser","==",f.id)
+          .where("toUser","==",uid)
+          .get();
+        let totalBonus = 0;
+        bonusSnap.forEach(b=>totalBonus += b.data().amount || 0);
+        tbody.innerHTML += `<tr>
+          <td>${f.level}</td>
+          <td>${f.username || "—"}</td>
+          <td>${f.email}</td>
+          <td>${totalBonus.toFixed(2)}</td>
+        </tr>`;
+      }
     }
   });
-
-  // Historique des bonus
-  db.collection("referralBonuses")
-    .where("toUser","==",user.uid)
-    .orderBy("createdAt","desc").limit(10)
-    .onSnapshot(snapshot => {
-      historyListEl.innerHTML = "";
-      snapshot.forEach(doc => {
-        const b = doc.data();
-        const date = b.createdAt ? b.createdAt.toDate().toLocaleString() : "—";
-        const levelClass = b.level === 1 ? "level-1" : b.level === 2 ? "level-2" : "level-3";
-        historyListEl.innerHTML += `
-          <li>
-            <span>[${date}] +${b.amount.toFixed(2)} USDT</span>
-            <span class="${levelClass}">Niveau ${b.level}</span>
-          </li>`;
-      });
-    });
-});
-
-// Copier le lien
-copyBtn.addEventListener("click", () => {
-  navigator.clipboard.writeText(linkEl.innerText).then(() => alert("Lien copié !"));
 });
 </script>
 </body>
-</html>
+  </html>
+  
