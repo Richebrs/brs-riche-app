@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Inscription - BRS RICHE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin:0; padding:0;
+  background: linear-gradient(135deg,#0d47a1,#1976d2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+#register-container {
+  background: #fff;
+  padding: 40px 32px;
+  border-radius: 20px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+h1 { color: #0d47a1; margin-bottom: 20px; font-size: 2em; }
+input[type="text"], input[type="email"], input[type="password"] {
+  width: 100%;
+  padding: 12px 14px;
+  margin: 8px 0 4px 0;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 1em;
+}
+input:focus { border-color: #1976d2; outline: none; }
+.password-container { position: relative; }
+.password-container i {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  cursor: pointer;
+  color: #555;
+}
+button {
+  background: #ffcc00;
+  color: #0d47a1;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 16px;
+}
+button:hover { background: #ffd633; }
+#message { margin-top: 12px; font-weight: bold; }
+.success { color: green; }
+.error { color: red; }
+a { display:block; margin-top:12px; color:#1976d2; text-decoration:none; }
+a:hover { text-decoration: underline; }
+</style>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+  authDomain: "brs-riche-2.firebaseapp.com",
+  projectId: "brs-riche-2"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+</script>
+</head>
+
+<body>
+<div id="register-container">
+  <h1>🌍 BRS RICHE</h1>
+  <form id="register-form">
+    <input type="text" id="username" placeholder="Pseudo (optionnel)"/>
+    <input type="email" id="email" placeholder="Adresse Email" required/>
+    <div class="password-container">
+      <input type="password" id="password" placeholder="Mot de passe" required/>
+      <i id="togglePassword" class="fas fa-eye"></i>
+    </div>
+    <div class="password-container">
+      <input type="password" id="confirmPassword" placeholder="Retapez le mot de passe" required/>
+      <i id="toggleConfirmPassword" class="fas fa-eye"></i>
+    </div>
+    <input type="text" id="referralCode" placeholder="Code de parrainage (optionnel)"/>
+    <button type="submit">S’inscrire</button>
+  </form>
+  <div id="message"></div>
+  <a href="login.html">Déjà membre ? Connexion</a>
+</div>
+
+<script>
+const form = document.getElementById('register-form');
+const message = document.getElementById('message');
+const togglePassword = document.getElementById('togglePassword');
+const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+const passwordInput = document.getElementById('password');
+const confirmPasswordInput = document.getElementById('confirmPassword');
+const referralInput = document.getElementById('referralCode');
+
+// 🔹 Afficher / Masquer mot de passe
+togglePassword.addEventListener('click', () => {
+  passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+  togglePassword.classList.toggle('fa-eye-slash');
+});
+toggleConfirmPassword.addEventListener('click', () => {
+  confirmPasswordInput.type = confirmPasswordInput.type === 'password' ? 'text' : 'password';
+  toggleConfirmPassword.classList.toggle('fa-eye-slash');
+});
+
+// 🔹 Pré-remplir le code de parrainage depuis l'URL
+const urlParams = new URLSearchParams(window.location.search);
+const refCodeFromURL = urlParams.get('ref');
+if(refCodeFromURL) referralInput.value = refCodeFromURL;
+
+// 🔹 Fonction inscription avec messages clairs
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  message.textContent = '';
+  message.className = '';
+
+  const username = document.getElementById('username').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = passwordInput.value;
+  const confirmPassword = confirmPasswordInput.value;
+  const referralCode = referralInput.value.trim();
+
+  if(password !== confirmPassword){
+    message.textContent = "❌ Les mots de passe ne correspondent pas !";
+    message.className = 'error';
+    return;
+  }
+
+  try {
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const uid = userCredential.user.uid;
+
+    // Ajouter l'utilisateur à Firestore
+    await db.collection('users').doc(uid).set({
+      username: username || null,
+      email: email,
+      referralCode: referralCode || null,
+      role: "user",
+      createdAt: new Date(),
+      wallet: { balance:0, totalGains:0, totalWithdrawn:0 }
+    });
+
+    message.textContent = "✅ Compte créé avec succès ! Redirection en cours...";
+    message.className = 'success';
+
+    setTimeout(()=>{ window.location.href = "dashboard.html"; },1500);
+
+  } catch(err){
+    console.error(err);
+    // Messages clairs selon l'erreur
+    if(err.code === 'auth/email-already-in-use'){
+      message.textContent = "❌ Cette adresse email est déjà utilisée.";
+    } else if(err.code === 'auth/invalid-email'){
+      message.textContent = "❌ L'adresse email n'est pas valide.";
+    } else if(err.code === 'auth/weak-password'){
+      message.textContent = "❌ Le mot de passe doit contenir au moins 6 caractères.";
+    } else {
+      message.textContent = "❌ Une erreur est survenue : " + err.message;
+    }
+    message.className = 'error';
+  }
+});
+</script>
+</body>
+  </html>
+  
