@@ -1,146 +1,164 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Parrainage - BRS RICHE</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-<style>
-body {
-  font-family:'Segoe UI',sans-serif; margin:0; padding:0;
-  background:#f4f7fb; color:#333; display:flex; flex-direction:column; align-items:center;
-}
-header {
-  width:100%; background:#0d47a1; color:#fff; padding:20px; text-align:center; font-size:1.5em;
-}
-.container {
-  background:#fff; padding:30px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15);
-  margin-top:20px; width:90%; max-width:600px; text-align:center;
-}
-input { width:100%; padding:10px; margin:10px 0; border-radius:8px; border:1px solid #ccc; font-size:1em; }
-button { padding:12px 20px; background:#ff9800; color:#fff; border:none; border-radius:12px; cursor:pointer; font-weight:bold; margin-top:10px; }
-button:hover { background:#e68900; }
-h2 { color:#0d47a1; margin-bottom:15px; }
-.referrals-list { list-style:none; padding:0; max-height:350px; overflow-y:auto; text-align:left; }
-.referrals-list li { padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; }
-.success { color:green; }
-.motiv { margin:15px 0; font-style:italic; color:#555; }
-.level { font-size:0.9em; color:#555; margin-left:5px; }
-</style>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
-  authDomain: "brs-riche-2.firebaseapp.com",
-  projectId: "brs-riche-2"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-// Générer un code aléatoire unique pour parrainage
-function generateReferralCode(length = 6){
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = 'BRS-';
-  for(let i=0;i<length;i++){ code += chars.charAt(Math.floor(Math.random()*chars.length)); }
-  return code;
-}
-
-auth.onAuthStateChanged(async user => {
-  if(!user) return window.location.href = "login.html";
-
-  const userRef = db.collection("users").doc(user.uid);
-  const doc = await userRef.get();
-
-  if(doc.exists){
-    let data = doc.data();
-
-    // Créer automatiquement le code de parrainage si inexistant
-    if(!data.myReferralCode){
-      const code = generateReferralCode();
-      await userRef.update({ myReferralCode: code });
-      data.myReferralCode = code;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parrainage - BRS RICHE</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* Styles CSS pour la page de parrainage */
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #0d47a1, #1976d2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
     }
-
-    document.getElementById("myReferralCode").innerText = data.myReferralCode;
-    document.getElementById("shareLink").value = `${window.location.origin}/register.html?ref=${data.myReferralCode}`;
-
-    // Afficher les filleuls et gains
-    displayReferrals(data.myReferralCode, user.uid);
-  }
-});
-
-// Copier le lien
-function copyReferralLink(){
-  const val = document.getElementById("shareLink").value;
-  navigator.clipboard.writeText(val).then(()=>alert("Lien copié !"));
-}
-
-// Fonction pour récupérer les filleuls et gains 3 niveaux
-async function displayReferrals(myCode, uid){
-  const listEl = document.getElementById("referralsList");
-  listEl.innerHTML = "";
-
-  const level1Snapshot = await db.collection("users").where("referralCode","==",myCode).get();
-
-  if(level1Snapshot.empty){
-    document.getElementById("noReferralsText").style.display = "block";
-    return;
-  } else {
-    document.getElementById("noReferralsText").style.display = "none";
-  }
-
-  // Parcours niveau 1
-  for(const doc1 of level1Snapshot.docs){
-    const u1 = doc1.data();
-    const gains1 = (u1.wallet?.totalGains || 0) * 0.15; // 15% niveau 1
-    const li1 = document.createElement("li");
-    li1.innerHTML = `<span>${u1.username || u1.email} <span class="level">(Niveau 1)</span></span> <span>Gains : ${gains1.toFixed(2)} USDT</span>`;
-    listEl.appendChild(li1);
-
-    // Parcours niveau 2
-    const level2Snapshot = await db.collection("users").where("referralCode","==",u1.myReferralCode).get();
-    for(const doc2 of level2Snapshot.docs){
-      const u2 = doc2.data();
-      const gains2 = (u2.wallet?.totalGains || 0) * 0.025; // 2.5%
-      const li2 = document.createElement("li");
-      li2.style.marginLeft = "20px";
-      li2.innerHTML = `<span>${u2.username || u2.email} <span class="level">(Niveau 2)</span></span> <span>Gains : ${gains2.toFixed(2)} USDT</span>`;
-      listEl.appendChild(li2);
-
-      // Parcours niveau 3
-      const level3Snapshot = await db.collection("users").where("referralCode","==",u2.myReferralCode).get();
-      for(const doc3 of level3Snapshot.docs){
-        const u3 = doc3.data();
-        const gains3 = (u3.wallet?.totalGains || 0) * 0.025; // 2.5%
-        const li3 = document.createElement("li");
-        li3.style.marginLeft = "40px";
-        li3.innerHTML = `<span>${u3.username || u3.email} <span class="level">(Niveau 3)</span></span> <span>Gains : ${gains3.toFixed(2)} USDT</span>`;
-        listEl.appendChild(li3);
-      }
+    #referral-container {
+      background: #fff;
+      padding: 40px 32px;
+      border-radius: 20px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
     }
-  }
-}
-</script>
+    h1 {
+      color: #0d47a1;
+      margin-bottom: 20px;
+      font-size: 2em;
+    }
+    #referral-link {
+      font-weight: bold;
+      color: #1976d2;
+      word-wrap: break-word;
+      margin-bottom: 12px;
+    }
+    #copy-button {
+      background: #ffcc00;
+      color: #0d47a1;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 16px;
+    }
+    #copy-button:hover {
+      background: #ffd633;
+    }
+    #message {
+      margin-top: 12px;
+      font-weight: bold;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+    #referrals-list {
+      margin-top: 20px;
+      text-align: left;
+    }
+    #referrals-list ul {
+      list-style: none;
+      padding: 0;
+    }
+    #referrals-list li {
+      margin-bottom: 8px;
+    }
+    #referrals-list li span {
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-<header>💰 Parrainage BRS RICHE</header>
-<div class="container">
-  <h2>Votre code de parrainage :</h2>
-  <p id="myReferralCode" style="font-weight:bold; font-size:1.3em;"></p>
-  <input type="text" id="shareLink" readonly/>
-  <button onclick="copyReferralLink()">📋 Copier le lien</button>
+  <div id="referral-container">
+    <h1>🌍 BRS RICHE</h1>
+    <p>Votre code de parrainage :</p>
+    <p id="referral-code">Chargement...</p>
+    <p>Copiez ce lien pour inviter vos amis :</p>
+    <p id="referral-link">Chargement...</p>
+    <button id="copy-button">Copier le lien</button>
+    <div id="message"></div>
+    <div id="referrals-list">
+      <h3>Filleuls et gains :</h3>
+      <ul id="referrals-list-items">
+        <li>Chargement...</li>
+      </ul>
+    </div>
+  </div>
 
-  <p id="noReferralsText" class="motiv">Vous n’avez encore invité personne. Partagez votre code pour commencer à gagner !</p>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+      authDomain: "brs-riche-2.firebaseapp.com",
+      projectId: "brs-riche-2"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-  <h2>Filleuls et gains :</h2>
-  <ul class="referrals-list" id="referralsList"></ul>
-</div>
+    const referralCodeElement = document.getElementById('referral-code');
+    const referralLinkElement = document.getElementById('referral-link');
+    const copyButton = document.getElementById('copy-button');
+    const messageElement = document.getElementById('message');
+    const referralsListElement = document.getElementById('referrals-list-items');
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          const userDoc = await db.collection('users').doc(user.uid).get();
+          if (userDoc.exists) {
+            const userData = userDoc.data();
+            const referralCode = userData.referralCode;
+            const referrals = userData.referrals || [];
+
+            referralCodeElement.textContent = referralCode;
+            referralLinkElement.textContent = `https://raw.githack.com/Richebrs/brs-riche-app/master/firebase-frontend/register.html?ref=${referralCode}`;
+            copyButton.onclick = () => {
+              navigator.clipboard.writeText(referralLinkElement.textContent)
+                .then(() => {
+                  messageElement.textContent = '✅ Lien copié avec succès !';
+                  messageElement.className = 'success';
+                })
+                .catch(() => {
+                  messageElement.textContent = '❌ Impossible de copier le lien.';
+                  messageElement.className = 'error';
+                });
+            };
+
+            if (referrals.length > 0) {
+              referralsListElement.innerHTML = '';
+              referrals.forEach(referral => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${referral.name} - ${referral.gains}€`;
+                referralsListElement.appendChild(listItem);
+              });
+            } else {
+              referralsListElement.innerHTML = '<li>Aucun filleul pour le moment.</li>';
+            }
+          } else {
+            messageElement.textContent = '❌ Utilisateur non trouvé.';
+            messageElement.className = 'error';
+          }
+        } catch (error) {
+          console.error(error);
+          messageElement.textContent = '❌ Une erreur est survenue.';
+          messageElement.className = 'error';
+        }
+      } else {
+        window.location.href = 'login.html';
+      }
+    });
+  </script>
 </body>
-  </html>
-  
+</html>
