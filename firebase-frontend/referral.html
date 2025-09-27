@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Parrainage - BRS Riche</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+body {font-family:'Segoe UI',sans-serif;margin:0;padding:0;background:#f4f7fb;color:#333;display:none;}
+header {background:#0d47a1;color:#fff;padding:20px;position:relative;text-align:center;}
+header h1 {margin:0;font-size:1.6em;}
+.back-btn {position:absolute;left:15px;top:20px;color:#fff;text-decoration:none;font-weight:bold;}
+.container {margin:20px auto;max-width:500px;background:#fff;padding:20px;border-radius:16px;box-shadow:0 6px 16px rgba(0,0,0,0.15);}
+h2 {color:#0d47a1;}
+.invite-box {background:#eef4ff;padding:12px;border-radius:12px;margin-bottom:20px;text-align:center;}
+.invite-link {font-weight:bold;color:#0d47a1;word-break:break-all;}
+.copy-btn {cursor:pointer;margin-left:5px;color:#0d47a1;}
+.stats {display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:20px 0;}
+.stat-box {background:#f9f9f9;padding:15px;border-radius:12px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,0.1);}
+.stat-box h3 {margin:0;font-size:1em;color:#555;}
+.stat-box p {margin:5px 0 0;font-size:1.3em;font-weight:bold;color:#0d47a1;}
+.history {margin-top:25px;}
+.history h3 {margin-bottom:10px;color:#0d47a1;}
+.history-list {list-style:none;padding:0;max-height:250px;overflow-y:auto;}
+.history-list li {padding:8px;border-bottom:1px solid #ddd;font-size:0.95em;display:flex;justify-content:space-between;}
+.level-1 {color:#2e7d32;font-weight:bold;}
+.level-2 {color:#f57c00;font-weight:bold;}
+.level-3 {color:#6a1b9a;font-weight:bold;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎁 Parrainage</h1>
+  <a href="dashboard.html" class="back-btn">⬅ Retour</a>
+</header>
+
+<div class="container">
+  <h2>Programme de Parrainage</h2>
+  <p>Invitez vos amis et gagnez automatiquement :</p>
+  <ul>
+    <li><b>Niveau 1</b> : 20% des achats de vos filleuls directs</li>
+    <li><b>Niveau 2</b> : 2.5% des filleuls de vos filleuls</li>
+    <li><b>Niveau 3</b> : 2.5% encore au 3e niveau</li>
+  </ul>
+  <p>Les bonus sont <b>automatiquement ajoutés</b> à votre solde.</p>
+
+  <div class="invite-box">
+    <p>Votre lien d'invitation :</p>
+    <p class="invite-link" id="invite-link">Chargement...</p>
+    <span class="copy-btn" id="copy-link"><i class="fa fa-copy"></i> Copier</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat-box">
+      <h3>Gains via Parrainage</h3>
+      <p id="referral-gains">0 USDT</p>
+    </div>
+    <div class="stat-box">
+      <h3>Solde disponible</h3>
+      <p id="wallet-balance">0 USDT</p>
+    </div>
+  </div>
+
+  <div class="history">
+    <h3>Historique des Bonus</h3>
+    <ul class="history-list" id="history-list"></ul>
+  </div>
+</div>
+
+<script>
+document.body.style.display = "block";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+  authDomain: "brs-riche-2.firebaseapp.com",
+  projectId: "brs-riche-2"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+const linkEl = document.getElementById("invite-link");
+const copyBtn = document.getElementById("copy-link");
+const balanceEl = document.getElementById("wallet-balance");
+const gainsEl = document.getElementById("referral-gains");
+const historyListEl = document.getElementById("history-list");
+
+auth.onAuthStateChanged(async user => {
+  if (!user) return window.location.href = "login.html";
+  const userRef = db.collection("users").doc(user.uid);
+
+  userRef.onSnapshot(doc => {
+    if (doc.exists) {
+      const data = doc.data();
+      const wallet = data.wallet || {};
+      const referralCode = data.referralCode || user.uid.substring(0,6);
+
+      // Générer un lien
+      const inviteLink = `${window.location.origin}/register.html?ref=${referralCode}`;
+      linkEl.innerText = inviteLink;
+
+      // Solde et gains
+      balanceEl.innerText = `${(wallet.balance||0).toFixed(2)} USDT`;
+      gainsEl.innerText = `${(wallet.totalGains||0).toFixed(2)} USDT`;
+    }
+  });
+
+  // Historique des bonus
+  db.collection("referralBonuses")
+    .where("toUser","==",user.uid)
+    .orderBy("createdAt","desc").limit(10)
+    .onSnapshot(snapshot => {
+      historyListEl.innerHTML = "";
+      snapshot.forEach(doc => {
+        const b = doc.data();
+        const date = b.createdAt ? b.createdAt.toDate().toLocaleString() : "—";
+        const levelClass = b.level === 1 ? "level-1" : b.level === 2 ? "level-2" : "level-3";
+        historyListEl.innerHTML += `
+          <li>
+            <span>[${date}] +${b.amount.toFixed(2)} USDT</span>
+            <span class="${levelClass}">Niveau ${b.level}</span>
+          </li>`;
+      });
+    });
+});
+
+// Copier le lien
+copyBtn.addEventListener("click", () => {
+  navigator.clipboard.writeText(linkEl.innerText).then(() => alert("Lien copié !"));
+});
+</script>
+</body>
+</html>
