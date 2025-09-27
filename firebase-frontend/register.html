@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -10,7 +10,10 @@ body {
   font-family: 'Segoe UI', Arial, sans-serif;
   margin:0; padding:0;
   background: linear-gradient(135deg,#0d47a1,#1976d2);
-  display: flex; justify-content: center; align-items: center; min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
 #register-container {
   background: #fff;
@@ -32,22 +35,36 @@ input[type="text"], input[type="email"], input[type="password"] {
 }
 input:focus { border-color: #1976d2; outline: none; }
 .password-container { position: relative; }
-.password-container i { position: absolute; top: 12px; right: 12px; cursor: pointer; color: #555; }
-button { background: #ffcc00; color: #0d47a1; border: none; padding: 12px 24px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 16px; }
+.password-container i {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  cursor: pointer;
+  color: #555;
+}
+button {
+  background: #ffcc00;
+  color: #0d47a1;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 16px;
+}
 button:hover { background: #ffd633; }
 #message { margin-top: 12px; font-weight: bold; }
 .success { color: green; }
 .error { color: red; }
 a { display:block; margin-top:12px; color:#1976d2; text-decoration:none; }
 a:hover { text-decoration: underline; }
-.help-text { font-size:0.85em; color:#555; margin-bottom:10px; }
 </style>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
@@ -57,11 +74,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-
-// Générer un code de parrainage unique
-function generateReferralCode(uid){
-  return "BRS-"+uid.substring(0,6).toUpperCase();
-}
 </script>
 </head>
 
@@ -80,7 +92,6 @@ function generateReferralCode(uid){
       <i id="toggleConfirmPassword" class="fas fa-eye"></i>
     </div>
     <input type="text" id="referralCode" placeholder="Code de parrainage (optionnel)"/>
-    <div class="help-text">Si vous avez un code de parrainage, saisissez-le ici. Sinon laissez vide.</div>
     <button type="submit">S’inscrire</button>
   </form>
   <div id="message"></div>
@@ -94,18 +105,28 @@ const togglePassword = document.getElementById('togglePassword');
 const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
 const passwordInput = document.getElementById('password');
 const confirmPasswordInput = document.getElementById('confirmPassword');
+const referralInput = document.getElementById('referralCode');
 
-// Afficher / masquer mot de passe
+// 🔹 Afficher / Masquer mot de passe
 togglePassword.addEventListener('click', () => {
-  passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+  const type = passwordInput.type === 'password' ? 'text' : 'password';
+  passwordInput.type = type;
   togglePassword.classList.toggle('fa-eye-slash');
 });
 toggleConfirmPassword.addEventListener('click', () => {
-  confirmPasswordInput.type = confirmPasswordInput.type === 'password' ? 'text' : 'password';
+  const type = confirmPasswordInput.type === 'password' ? 'text' : 'password';
+  confirmPasswordInput.type = type;
   toggleConfirmPassword.classList.toggle('fa-eye-slash');
 });
 
-// Inscription avec gestion parrainage 3 niveaux
+// 🔹 Pré-remplir le code de parrainage depuis l'URL
+const urlParams = new URLSearchParams(window.location.search);
+const refCodeFromURL = urlParams.get('ref');
+if(refCodeFromURL) {
+  referralInput.value = refCodeFromURL;
+}
+
+// 🔹 Fonction inscription
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   message.textContent = '';
@@ -114,56 +135,42 @@ form.addEventListener('submit', async (e) => {
   const email = document.getElementById('email').value.trim();
   const password = passwordInput.value;
   const confirmPassword = confirmPasswordInput.value;
-  const referralCode = document.getElementById('referralCode').value.trim();
+  const referralCode = referralInput.value.trim();
 
-  if(password !== confirmPassword){
+  if (password !== confirmPassword) {
     message.textContent = "❌ Les mots de passe ne correspondent pas !";
     message.className = 'error';
     return;
   }
 
   try {
-    // Créer le compte Firebase Auth
+    // Création du compte
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const uid = userCredential.user.uid;
-    const myReferralCode = generateReferralCode(uid);
 
-    // Déterminer parrains N1, N2, N3
-    let sponsor1 = null, sponsor2 = null, sponsor3 = null;
-    if(referralCode){
-      const sponsorSnap = await db.collection('users').where('myReferralCode','==',referralCode).get();
-      if(!sponsorSnap.empty){
-        const sponsorDoc = sponsorSnap.docs[0];
-        sponsor1 = sponsorDoc.id;
-        sponsor2 = sponsorDoc.data().sponsor1 || null;
-        sponsor3 = sponsorDoc.data().sponsor2 || null;
-      }
-    }
-
-    // Créer le document utilisateur
+    // Création du document Firestore
     await db.collection('users').doc(uid).set({
       username: username || null,
       email: email,
-      myReferralCode: myReferralCode,
-      sponsor1: sponsor1,
-      sponsor2: sponsor2,
-      sponsor3: sponsor3,
+      referralCode: referralCode || null,
       role: "user",
       createdAt: new Date(),
-      wallet: { balance:0, totalGains:0, totalWithdrawn:0 }
+      wallet: { balance: 0, totalGains: 0, totalWithdrawn: 0 }
     });
 
-    message.textContent = "✅ Compte créé avec succès ! Votre code : "+myReferralCode;
+    message.textContent = "✅ Compte créé avec succès !";
     message.className = 'success';
-    setTimeout(()=>{ window.location.href="dashboard.html"; },2000);
 
-  } catch(err){
+    // Redirection après inscription
+    setTimeout(() => { window.location.href = "dashboard.html"; }, 1500);
+
+  } catch (err) {
     console.error(err);
-    message.textContent = "❌ "+err.message;
+    message.textContent = "❌ " + err.message;
     message.className = 'error';
   }
 });
 </script>
 </body>
-  </html>
+    </html>
   
