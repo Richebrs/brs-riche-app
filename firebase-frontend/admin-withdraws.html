@@ -1,112 +1,184 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>📋 Admin - Retraits</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<meta charset="UTF-8">
+<title>Admin - Gestion des Retraits</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+body {
+  font-family:'Segoe UI',sans-serif; margin:0; padding:0;
+  background:#f4f7fb; color:#333; display:none;
+}
+header {
+  background:#263238; color:#fff; padding:20px; text-align:center; position:relative;
+}
+header h1 { margin:0; font-size:1.5em; }
+.back-btn { position:absolute; left:15px; top:20px; color:#fff; text-decoration:none; font-weight:bold; }
+
+.container { margin:20px auto; max-width:1000px; background:#fff; padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15); overflow-x:auto; }
+table { width:100%; border-collapse:collapse; }
+th, td { padding:12px; text-align:left; font-size:0.9em; border-bottom:1px solid #ddd; }
+th { background:#0d47a1; color:#fff; }
+td { vertical-align:middle; }
+
+.status-pending { color:#ff9800; font-weight:bold; }
+.status-success { color:#4caf50; font-weight:bold; }
+.status-failed  { color:#f44336; font-weight:bold; }
+
+button {
+  padding:6px 10px; border:none; border-radius:6px;
+  font-size:0.85em; cursor:pointer; margin:2px;
+  display:inline-flex; align-items:center; gap:4px;
+}
+.btn-validate { background:#4caf50; color:#fff; }
+.btn-refuse   { background:#f44336; color:#fff; }
+.btn-validate:hover { background:#43a047; }
+.btn-refuse:hover   { background:#d32f2f; }
+
+.copy-btn { cursor:pointer; color:#0d47a1; margin-left:5px; }
+.copy-btn:hover { text-decoration:underline; }
+
+@media(max-width:700px){
+  th, td { font-size:0.8em; padding:8px; }
+  header h1 { font-size:1.2em; }
+}
+</style>
 </head>
-<body class="bg-gray-100">
-  <div class="max-w-4xl mx-auto mt-6 p-4 bg-white rounded-xl shadow-lg">
-    <h2 class="text-2xl font-bold mb-4 text-center">📋 Gestion des Retraits</h2>
-    <div id="withdrawalsList" class="space-y-3"></div>
-  </div>
+<body>
+<header>
+  <h1>📊 Gestion des Retraits (Admin)</h1>
+  <a href="dashboard_admin.html" class="back-btn">⬅ Retour</a>
+</header>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "XXX",
-      authDomain: "XXX",
-      projectId: "XXX",
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+<div class="container">
+  <table id="withdrawals-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Email</th>
+        <th>Montant</th>
+        <th>Net</th>
+        <th>Réseau</th>
+        <th>Adresse</th>
+        <th>Statut</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
-    const withdrawalsList = document.getElementById("withdrawalsList");
+<script>
+document.body.style.display = "block";
 
-    // Copier l’adresse
-    function copyAddress(address) {
-      navigator.clipboard.writeText(address).then(() => {
-        alert("✅ Adresse copiée : " + address);
-      });
-    }
+const firebaseConfig = {
+  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+  authDomain: "brs-riche-2.firebaseapp.com",
+  projectId: "brs-riche-2"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-    // Action admin
-    async function updateWithdrawal(id, userId, amount, action, address) {
+const tableBody = document.querySelector("#withdrawals-table tbody");
+
+// 🔹 Charger retraits avec emails
+db.collection("withdrawals")
+  .orderBy("createdAt","desc")
+  .onSnapshot(async snapshot => {
+    tableBody.innerHTML = "";
+
+    for(const doc of snapshot.docs){
+      const tx = doc.data();
+      const id = doc.id;
+      const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
+
+      // récupérer l'email utilisateur
+      let email = "—";
       try {
-        const withdrawalRef = db.collection("withdrawals").doc(id);
-
-        if (action === "success") {
-          await withdrawalRef.update({ status: "success" });
-          alert("✅ Retrait validé.");
-        } else if (action === "refused") {
-          // Remboursement automatique
-          await db.collection("wallets").doc(userId).update({
-            balance: firebase.firestore.FieldValue.increment(amount)
-          });
-          await withdrawalRef.update({ status: "refused" });
-          alert("❌ Retrait refusé, montant remboursé.");
+        const userDoc = await db.collection("users").doc(tx.userId).get();
+        if(userDoc.exists && userDoc.data().email){
+          email = userDoc.data().email;
         }
-      } catch (err) {
-        console.error(err);
-        alert("Erreur admin !");
+      }catch(e){ console.error(e); }
+
+      let statusClass = tx.status==="Pending" ? "status-pending" :
+                        tx.status==="Success" ? "status-success" : "status-failed";
+
+      let statusIcon = tx.status==="Success" ? "✅" : tx.status==="Failed" ? "❌" : "⏳";
+
+      let actionBtns = "";
+      if(tx.status==="Pending"){
+        actionBtns = `
+          <button class="btn-validate" onclick="updateStatus('${id}','Success','${tx.userId}',${tx.amount})">
+            <i class="fa fa-check"></i> Valider
+          </button>
+          <button class="btn-refuse" onclick="updateStatus('${id}','Failed','${tx.userId}',${tx.amount})">
+            <i class="fa fa-times"></i> Refuser
+          </button>
+        `;
       }
+
+      tableBody.innerHTML += `
+        <tr>
+          <td>${date}</td>
+          <td>${email}</td>
+          <td>${tx.amount} USDT</td>
+          <td>${tx.netReceived} USDT</td>
+          <td>${tx.network}</td>
+          <td>
+            ${tx.address}
+            <span class="copy-btn" onclick="navigator.clipboard.writeText('${tx.address}')">
+              <i class="fa fa-copy"></i>
+            </span>
+          </td>
+          <td class="${statusClass}">${statusIcon} ${tx.status}</td>
+          <td>${actionBtns}</td>
+        </tr>`;
     }
+  });
 
-    // Charger retraits
-    function loadWithdrawals() {
-      db.collection("withdrawals")
-        .orderBy("createdAt", "desc")
-        .onSnapshot(async snapshot => {
-          withdrawalsList.innerHTML = "";
-          for (const doc of snapshot.docs) {
-            const w = doc.data();
-            const id = doc.id;
-            const userSnap = await db.collection("users").doc(w.userId).get();
-            const email = userSnap.exists ? userSnap.data().email : "inconnu";
+// 🔹 Fonction mise à jour avec transaction
+async function updateStatus(id, newStatus, userId, amount){
+  try{
+    await db.runTransaction(async (transaction) => {
+      const txRef = db.collection("withdrawals").doc(id);
+      const txDoc = await transaction.get(txRef);
 
-            let color = w.status === "success" ? "text-green-600" :
-                        w.status === "refused" ? "text-red-600" :
-                        "text-yellow-600";
+      if(!txDoc.exists) throw "Transaction inexistante";
+      const tx = txDoc.data();
 
-            withdrawalsList.innerHTML += `
-              <div class="p-3 border rounded-lg shadow flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                <div class="mb-2 sm:mb-0">
-                  <p><b>Utilisateur :</b> ${email}</p>
-                  <p><b>Montant :</b> ${w.amount} USDT</p>
-                  <p><b>Adresse :</b> <span class="font-mono">${w.address}</span></p>
-                  <p><b>Réseau :</b> ${w.network}</p>
-                  <p><b>Status :</b> <span class="${color} font-bold">${w.status}</span></p>
-                </div>
-                <div class="flex space-x-2">
-                  <button onclick="copyAddress('${w.address}')" class="bg-blue-500 text-white px-3 py-1 rounded">📋 Copier</button>
-                  <button onclick="updateWithdrawal('${id}','${w.userId}',${w.amount},'success')" class="bg-green-500 text-white px-3 py-1 rounded">✅ Valider</button>
-                  <button onclick="updateWithdrawal('${id}','${w.userId}',${w.amount},'refused')" class="bg-red-500 text-white px-3 py-1 rounded">❌ Refuser</button>
-                </div>
-              </div>
-            `;
-          }
-        });
-    }
+      if(tx.status !== "Pending") throw "Déjà traité";
 
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        // Vérification admin
-        db.collection("users").doc(user.uid).get().then(doc => {
-          if (doc.exists && doc.data().role === "admin") {
-            loadWithdrawals();
-          } else {
-            alert("⛔ Accès refusé (non admin).");
-            window.location.href = "login.html";
-          }
-        });
-      } else {
-        window.location.href = "login.html";
+      transaction.update(txRef, { status: newStatus });
+
+      if(newStatus==="Failed"){
+        // remboursement automatique
+        const userRef = db.collection("users").doc(userId);
+        const userDoc = await transaction.get(userRef);
+        if(userDoc.exists){
+          const wallet = userDoc.data().wallet || {};
+          const newBalance = (wallet.balance || 0) + tx.amount;
+          const newTotalWithdrawn = (wallet.totalWithdrawn || 0) - tx.amount;
+
+          transaction.update(userRef, {
+            "wallet.balance": newBalance,
+            "wallet.totalWithdrawn": newTotalWithdrawn >=0 ? newTotalWithdrawn : 0
+          });
+        }
       }
     });
-  </script>
+
+    alert("✅ Retrait mis à jour : " + newStatus);
+  }catch(e){
+    alert("❌ Erreur : " + e);
+    console.error(e);
+  }
+}
+</script>
 </body>
-</html>
+    </html>
+  
