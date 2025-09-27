@@ -109,11 +109,13 @@ const referralInput = document.getElementById('referralCode');
 
 // 🔹 Afficher / Masquer mot de passe
 togglePassword.addEventListener('click', () => {
-  passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+  const type = passwordInput.type === 'password' ? 'text' : 'password';
+  passwordInput.type = type;
   togglePassword.classList.toggle('fa-eye-slash');
 });
 toggleConfirmPassword.addEventListener('click', () => {
-  confirmPasswordInput.type = confirmPasswordInput.type === 'password' ? 'text' : 'password';
+  const type = confirmPasswordInput.type === 'password' ? 'text' : 'password';
+  confirmPasswordInput.type = type;
   toggleConfirmPassword.classList.toggle('fa-eye-slash');
 });
 
@@ -122,11 +124,10 @@ const urlParams = new URLSearchParams(window.location.search);
 const refCodeFromURL = urlParams.get('ref');
 if(refCodeFromURL) referralInput.value = refCodeFromURL;
 
-// 🔹 Fonction inscription avec messages clairs
+// 🔹 Fonction inscription
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   message.textContent = '';
-  message.className = '';
 
   const username = document.getElementById('username').value.trim();
   const email = document.getElementById('email').value.trim();
@@ -134,42 +135,57 @@ form.addEventListener('submit', async (e) => {
   const confirmPassword = confirmPasswordInput.value;
   const referralCode = referralInput.value.trim();
 
-  if(password !== confirmPassword){
+  if (password !== confirmPassword) {
     message.textContent = "❌ Les mots de passe ne correspondent pas !";
     message.className = 'error';
     return;
   }
 
   try {
+    // Création du compte
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const uid = userCredential.user.uid;
 
-    // Ajouter l'utilisateur à Firestore
+    // 🔹 Générer code de parrainage unique si vide
+    const userRefCode = 'BRS-' + Math.random().toString(36).substring(2,8).toUpperCase();
+
+    // Création du document Firestore
     await db.collection('users').doc(uid).set({
       username: username || null,
       email: email,
-      referralCode: referralCode || null,
+      referralCode: userRefCode,
       role: "user",
       createdAt: new Date(),
-      wallet: { balance:0, totalGains:0, totalWithdrawn:0 }
+      wallet: { balance: 0, totalGains: 0, totalWithdrawn: 0 },
+      referrals: { level1: [], level2: [], level3: [] }
     });
 
-    message.textContent = "✅ Compte créé avec succès ! Redirection en cours...";
+    // 🔹 Ajouter l'utilisateur au niveau 1 du parrain si code présent
+    if(referralCode) {
+      const query = await db.collection('users').where('referralCode','==',referralCode).get();
+      if(!query.empty){
+        const refUid = query.docs[0].id;
+        await db.collection('users').doc(refUid).update({
+          'referrals.level1': firebase.firestore.FieldValue.arrayUnion({uid: uid, name: username || email, gains: 0})
+        });
+      }
+    }
+
+    message.textContent = "✅ Compte créé avec succès !";
     message.className = 'success';
+    setTimeout(()=> window.location.href = "dashboard.html",1500);
 
-    setTimeout(()=>{ window.location.href = "dashboard.html"; },1500);
-
-  } catch(err){
+  } catch (err) {
     console.error(err);
-    // Messages clairs selon l'erreur
-    if(err.code === 'auth/email-already-in-use'){
-      message.textContent = "❌ Cette adresse email est déjà utilisée.";
-    } else if(err.code === 'auth/invalid-email'){
-      message.textContent = "❌ L'adresse email n'est pas valide.";
-    } else if(err.code === 'auth/weak-password'){
-      message.textContent = "❌ Le mot de passe doit contenir au moins 6 caractères.";
+    // 🔹 Messages plus clairs
+    if(err.code === 'auth/email-already-in-use') {
+      message.textContent = '❌ Cet email est déjà utilisé.';
+    } else if(err.code === 'auth/invalid-email') {
+      message.textContent = '❌ Email invalide.';
+    } else if(err.code === 'auth/weak-password') {
+      message.textContent = '❌ Mot de passe trop faible (6 caractères minimum).';
     } else {
-      message.textContent = "❌ Une erreur est survenue : " + err.message;
+      message.textContent = '❌ ' + err.message;
     }
     message.className = 'error';
   }
@@ -177,4 +193,4 @@ form.addEventListener('submit', async (e) => {
 </script>
 </body>
   </html>
-  
+      
