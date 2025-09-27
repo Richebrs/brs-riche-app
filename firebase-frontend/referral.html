@@ -1,164 +1,140 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Parrainage - BRS RICHE</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <style>
-    /* Styles CSS pour la page de parrainage */
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(135deg, #0d47a1, #1976d2);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-    #referral-container {
-      background: #fff;
-      padding: 40px 32px;
-      border-radius: 20px;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
-      width: 100%;
-      max-width: 500px;
-      text-align: center;
-    }
-    h1 {
-      color: #0d47a1;
-      margin-bottom: 20px;
-      font-size: 2em;
-    }
-    #referral-link {
-      font-weight: bold;
-      color: #1976d2;
-      word-wrap: break-word;
-      margin-bottom: 12px;
-    }
-    #copy-button {
-      background: #ffcc00;
-      color: #0d47a1;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-weight: bold;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 16px;
-    }
-    #copy-button:hover {
-      background: #ffd633;
-    }
-    #message {
-      margin-top: 12px;
-      font-weight: bold;
-    }
-    .success {
-      color: green;
-    }
-    .error {
-      color: red;
-    }
-    #referrals-list {
-      margin-top: 20px;
-      text-align: left;
-    }
-    #referrals-list ul {
-      list-style: none;
-      padding: 0;
-    }
-    #referrals-list li {
-      margin-bottom: 8px;
-    }
-    #referrals-list li span {
-      font-weight: bold;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parrainage - BRS RICHE</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin:0; padding:0;
+  background: linear-gradient(135deg,#0d47a1,#1976d2);
+  display:flex; justify-content:center; align-items:center; min-height:100vh;
+}
+#referral-container {
+  background:#fff; padding:40px 32px; border-radius:20px; box-shadow:0 8px 28px rgba(0,0,0,0.25);
+  width:100%; max-width:550px; text-align:center;
+}
+h1 { color:#0d47a1; margin-bottom:20px; font-size:2em; }
+p { margin:8px 0; }
+#referral-link { font-weight:bold; color:#1976d2; word-wrap:break-word; margin-bottom:12px; }
+#copy-button { background:#ffcc00; color:#0d47a1; border:none; padding:12px 24px; border-radius:12px; font-weight:bold; cursor:pointer; width:100%; margin-top:16px; }
+#copy-button:hover { background:#ffd633; }
+#message { margin-top:12px; font-weight:bold; }
+.success { color:green; }
+.error { color:red; }
+.levels { text-align:left; margin-top:20px; }
+.levels h3 { color:#0d47a1; margin-bottom:10px; }
+.levels ul { list-style:none; padding:0; }
+.levels li { margin-bottom:6px; }
+.levels li span { font-weight:bold; }
+.note { font-size:0.9em; color:#555; margin-top:12px; }
+</style>
 </head>
 <body>
-  <div id="referral-container">
-    <h1>🌍 BRS RICHE</h1>
-    <p>Votre code de parrainage :</p>
-    <p id="referral-code">Chargement...</p>
-    <p>Copiez ce lien pour inviter vos amis :</p>
-    <p id="referral-link">Chargement...</p>
-    <button id="copy-button">Copier le lien</button>
-    <div id="message"></div>
-    <div id="referrals-list">
-      <h3>Filleuls et gains :</h3>
-      <ul id="referrals-list-items">
-        <li>Chargement...</li>
-      </ul>
-    </div>
+
+<div id="referral-container">
+  <h1>🌍 BRS RICHE</h1>
+
+  <p>Votre code de parrainage unique :</p>
+  <p id="referral-code">Chargement...</p>
+
+  <p>Copiez ce lien pour inviter vos amis et gagner des commissions :</p>
+  <p id="referral-link">Chargement...</p>
+  <button id="copy-button">Copier le lien</button>
+
+  <div id="message"></div>
+
+  <div class="levels">
+    <h3>Vos filleuls et gains :</h3>
+    <ul id="level1-list">
+      <li>Chargement niveau 1...</li>
+    </ul>
+    <ul id="level2-list">
+      <li>Chargement niveau 2...</li>
+    </ul>
+    <ul id="level3-list">
+      <li>Chargement niveau 3...</li>
+    </ul>
+    <p class="note">💡 Niveau 1 = 20% | Niveau 2 = 2.5% | Niveau 3 = 2.5%</p>
+    <p class="note">Invitez vos amis pour augmenter vos gains et gravir les niveaux !</p>
   </div>
+</div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
-      authDomain: "brs-riche-2.firebaseapp.com",
-      projectId: "brs-riche-2"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
+  authDomain: "brs-riche-2.firebaseapp.com",
+  projectId: "brs-riche-2"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-    const referralCodeElement = document.getElementById('referral-code');
-    const referralLinkElement = document.getElementById('referral-link');
-    const copyButton = document.getElementById('copy-button');
-    const messageElement = document.getElementById('message');
-    const referralsListElement = document.getElementById('referrals-list-items');
+const referralCodeEl = document.getElementById('referral-code');
+const referralLinkEl = document.getElementById('referral-link');
+const copyButton = document.getElementById('copy-button');
+const messageEl = document.getElementById('message');
 
-    auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        try {
-          const userDoc = await db.collection('users').doc(user.uid).get();
-          if (userDoc.exists) {
-            const userData = userDoc.data();
-            const referralCode = userData.referralCode;
-            const referrals = userData.referrals || [];
+const level1List = document.getElementById('level1-list');
+const level2List = document.getElementById('level2-list');
+const level3List = document.getElementById('level3-list');
 
-            referralCodeElement.textContent = referralCode;
-            referralLinkElement.textContent = `https://raw.githack.com/Richebrs/brs-riche-app/master/firebase-frontend/register.html?ref=${referralCode}`;
-            copyButton.onclick = () => {
-              navigator.clipboard.writeText(referralLinkElement.textContent)
-                .then(() => {
-                  messageElement.textContent = '✅ Lien copié avec succès !';
-                  messageElement.className = 'success';
-                })
-                .catch(() => {
-                  messageElement.textContent = '❌ Impossible de copier le lien.';
-                  messageElement.className = 'error';
-                });
-            };
+auth.onAuthStateChanged(async (user)=>{
+  if(user){
+    try{
+      const userDoc = await db.collection('users').doc(user.uid).get();
+      if(userDoc.exists){
+        const data = userDoc.data();
+        const code = data.referralCode;
+        const referrals = data.referrals || {level1:[],level2:[],level3:[]};
 
-            if (referrals.length > 0) {
-              referralsListElement.innerHTML = '';
-              referrals.forEach(referral => {
-                const listItem = document.createElement('li');
-                listItem.textContent = `${referral.name} - ${referral.gains}€`;
-                referralsListElement.appendChild(listItem);
-              });
-            } else {
-              referralsListElement.innerHTML = '<li>Aucun filleul pour le moment.</li>';
-            }
+        referralCodeEl.textContent = code;
+        referralLinkEl.textContent = `${window.location.origin}/register.html?ref=${code}`;
+
+        copyButton.onclick = ()=>{
+          navigator.clipboard.writeText(referralLinkEl.textContent)
+            .then(()=>{messageEl.textContent='✅ Lien copié avec succès !'; messageEl.className='success';})
+            .catch(()=>{messageEl.textContent='❌ Impossible de copier le lien.'; messageEl.className='error';});
+        };
+
+        // Affichage niveaux
+        const fillList = (listEl, arr, level)=>{
+          listEl.innerHTML = '';
+          if(arr.length === 0){
+            const li = document.createElement('li');
+            li.textContent = `Aucun filleul au niveau ${level}.`;
+            listEl.appendChild(li);
           } else {
-            messageElement.textContent = '❌ Utilisateur non trouvé.';
-            messageElement.className = 'error';
+            arr.forEach(ref=>{
+              const li = document.createElement('li');
+              li.innerHTML = `<span>${ref.name}</span> - Gains : ${ref.gains}€`;
+              listEl.appendChild(li);
+            });
           }
-        } catch (error) {
-          console.error(error);
-          messageElement.textContent = '❌ Une erreur est survenue.';
-          messageElement.className = 'error';
-        }
+        };
+
+        fillList(level1List, referrals.level1 || [], 1);
+        fillList(level2List, referrals.level2 || [], 2);
+        fillList(level3List, referrals.level3 || [], 3);
+
       } else {
-        window.location.href = 'login.html';
+        messageEl.textContent='❌ Utilisateur non trouvé.';
+        messageEl.className='error';
       }
-    });
-  </script>
+    }catch(e){
+      console.error(e);
+      messageEl.textContent='❌ Une erreur est survenue.';
+      messageEl.className='error';
+    }
+  } else {
+    window.location.href='login.html';
+  }
+});
+</script>
 </body>
 </html>
