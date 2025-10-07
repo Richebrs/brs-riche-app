@@ -1,80 +1,144 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <title>Admin - Gestion des Retraits</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 body {
-  font-family:'Segoe UI',sans-serif; margin:0; padding:0;
-  background:#f4f7fb; color:#333; display:none;
+  font-family: 'Segoe UI', sans-serif;
+  background: #f4f7fb;
+  margin: 0;
+  padding: 0;
+  display: none;
 }
 header {
-  background:#263238; color:#fff; padding:20px; text-align:center; position:relative;
+  background: #0d47a1;
+  color: #fff;
+  padding: 18px;
+  text-align: center;
+  position: relative;
 }
-header h1 { margin:0; font-size:1.5em; }
-.back-btn { position:absolute; left:15px; top:20px; color:#fff; text-decoration:none; font-weight:bold; }
-
-.container { margin:20px auto; max-width:1000px; background:#fff; padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.15); overflow-x:auto; }
-table { width:100%; border-collapse:collapse; }
-th, td { padding:12px; text-align:left; font-size:0.9em; border-bottom:1px solid #ddd; }
-th { background:#0d47a1; color:#fff; }
-td { vertical-align:middle; }
-
-.status-pending { color:#ff9800; font-weight:bold; }
-.status-success { color:#4caf50; font-weight:bold; }
-.status-failed  { color:#f44336; font-weight:bold; }
-
+.back-btn {
+  position: absolute;
+  left: 15px;
+  top: 18px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1em;
+}
+.container {
+  max-width: 850px;
+  margin: 30px auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+h2 {
+  text-align: center;
+  color: #0d47a1;
+  margin-bottom: 20px;
+}
+.filter {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.filter button {
+  background: #ff9800;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 15px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.filter button:hover {
+  background: #e68900;
+}
+.withdraw-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.withdraw-item {
+  background: #f9fbff;
+  padding: 15px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+.withdraw-item strong { color: #0d47a1; }
+.status {
+  font-weight: bold;
+}
+.status.Pending { color: #b07a00; }
+.status.Success { color: #0c880c; }
+.status.Failed { color: #d93025; }
+.action-btns {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
 button {
-  padding:6px 10px; border:none; border-radius:6px;
-  font-size:0.85em; cursor:pointer; margin:2px;
-  display:inline-flex; align-items:center; gap:4px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .9em;
+  font-weight: 600;
 }
-.btn-validate { background:#4caf50; color:#fff; }
-.btn-refuse   { background:#f44336; color:#fff; }
-.btn-validate:hover { background:#43a047; }
-.btn-refuse:hover   { background:#d32f2f; }
-
-.copy-btn { cursor:pointer; color:#0d47a1; margin-left:5px; }
-.copy-btn:hover { text-decoration:underline; }
-
-@media(max-width:700px){
-  th, td { font-size:0.8em; padding:8px; }
-  header h1 { font-size:1.2em; }
+.validate { background: #0c880c; color: #fff; }
+.reject { background: #d93025; color: #fff; }
+.validate:hover { background: #0a6e0a; }
+.reject:hover { background: #b0241f; }
+.loading { opacity: .6; pointer-events: none; }
+footer {
+  text-align: center;
+  margin-top: 30px;
+}
+footer button {
+  background: #ff9800;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+footer button:hover {
+  background: #e68900;
 }
 </style>
 </head>
 <body>
 <header>
-  <h1>📊 Gestion des Retraits (Admin)</h1>
-  <a href="dashboard_admin.html" class="back-btn">⬅ Retour</a>
+  <a href="dashboard.html" class="back-btn">⬅ Retour</a>
+  <h1>🛠️ Gestion des Retraits</h1>
 </header>
 
 <div class="container">
-  <table id="withdrawals-table">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Email</th>
-        <th>Montant</th>
-        <th>Net</th>
-        <th>Réseau</th>
-        <th>Adresse</th>
-        <th>Statut</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <h2>Demandes de retrait</h2>
+  <div class="filter">
+    <button id="show-pending">Afficher seulement les en attente</button>
+    <button id="show-all">Afficher tout</button>
+  </div>
+  <ul id="withdraw-list" class="withdraw-list"></ul>
 </div>
+
+<footer>
+  <button id="retour-btn">⬅ Retour au Dashboard</button>
+</footer>
 
 <script>
 document.body.style.display = "block";
-
 const firebaseConfig = {
   apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
   authDomain: "brs-riche-2.firebaseapp.com",
@@ -82,103 +146,108 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const auth = firebase.auth();
 
-const tableBody = document.querySelector("#withdrawals-table tbody");
+let showPendingOnly = true;
 
-// 🔹 Charger retraits avec emails
-db.collection("withdrawals")
-  .orderBy("createdAt","desc")
-  .onSnapshot(async snapshot => {
-    tableBody.innerHTML = "";
+auth.onAuthStateChanged(user => {
+  if (!user) return window.location.href = "login.html";
+  loadWithdrawals();
+});
 
-    for(const doc of snapshot.docs){
-      const tx = doc.data();
-      const id = doc.id;
-      const date = tx.createdAt ? tx.createdAt.toDate().toLocaleString() : "—";
+document.getElementById("show-pending").addEventListener("click", () => {
+  showPendingOnly = true;
+  loadWithdrawals();
+});
+document.getElementById("show-all").addEventListener("click", () => {
+  showPendingOnly = false;
+  loadWithdrawals();
+});
 
-      // récupérer l'email utilisateur
-      let email = "—";
-      try {
-        const userDoc = await db.collection("users").doc(tx.userId).get();
-        if(userDoc.exists && userDoc.data().email){
-          email = userDoc.data().email;
-        }
-      }catch(e){ console.error(e); }
+async function loadWithdrawals() {
+  const list = document.getElementById("withdraw-list");
+  list.innerHTML = "<p>⏳ Chargement des demandes...</p>";
+  const snap = await db.collection("withdrawals").orderBy("createdAt", "desc").get();
+  list.innerHTML = "";
 
-      let statusClass = tx.status==="Pending" ? "status-pending" :
-                        tx.status==="Success" ? "status-success" : "status-failed";
+  if (snap.empty) {
+    list.innerHTML = "<p>Aucune demande trouvée.</p>";
+    return;
+  }
 
-      let statusIcon = tx.status==="Success" ? "✅" : tx.status==="Failed" ? "❌" : "⏳";
+  snap.forEach(doc => {
+    const w = doc.data(), id = doc.id;
+    if (showPendingOnly && w.status !== "Pending") return;
+    const date = w.createdAt ? w.createdAt.toDate().toLocaleString() : "—";
+    const status = w.status || "Pending";
 
-      let actionBtns = "";
-      if(tx.status==="Pending"){
-        actionBtns = `
-          <button class="btn-validate" onclick="updateStatus('${id}','Success','${tx.userId}',${tx.amount})">
-            <i class="fa fa-check"></i> Valider
-          </button>
-          <button class="btn-refuse" onclick="updateStatus('${id}','Failed','${tx.userId}',${tx.amount})">
-            <i class="fa fa-times"></i> Refuser
-          </button>
-        `;
-      }
+    const li = document.createElement("li");
+    li.className = "withdraw-item";
+    li.innerHTML = `
+      <div><strong>Utilisateur :</strong> ${w.userId}</div>
+      <div><strong>Montant :</strong> ${w.amount} USDT</div>
+      <div><strong>Réseau :</strong> ${w.network}</div>
+      <div><strong>Adresse :</strong> ${w.address}</div>
+      <div><strong>Frais :</strong> ${w.fee.toFixed(2)} USDT</div>
+      <div><strong>Net à payer :</strong> ${w.netReceived.toFixed(2)} USDT</div>
+      <div><strong>Date :</strong> ${date}</div>
+      <div><strong>Statut :</strong> <span class="status ${status}">${status}</span></div>
+    `;
 
-      tableBody.innerHTML += `
-        <tr>
-          <td>${date}</td>
-          <td>${email}</td>
-          <td>${tx.amount} USDT</td>
-          <td>${tx.netReceived} USDT</td>
-          <td>${tx.network}</td>
-          <td>
-            ${tx.address}
-            <span class="copy-btn" onclick="navigator.clipboard.writeText('${tx.address}')">
-              <i class="fa fa-copy"></i>
-            </span>
-          </td>
-          <td class="${statusClass}">${statusIcon} ${tx.status}</td>
-          <td>${actionBtns}</td>
-        </tr>`;
+    if (status === "Pending") {
+      const div = document.createElement("div");
+      div.className = "action-btns";
+      const vBtn = document.createElement("button");
+      vBtn.className = "validate";
+      vBtn.innerText = "✅ Valider";
+      const rBtn = document.createElement("button");
+      rBtn.className = "reject";
+      rBtn.innerText = "❌ Refuser";
+
+      div.appendChild(vBtn);
+      div.appendChild(rBtn);
+      li.appendChild(div);
+
+      vBtn.onclick = () => updateStatus(id, "Success", w);
+      rBtn.onclick = () => updateStatus(id, "Failed", w, true);
     }
+    list.appendChild(li);
   });
+}
 
-// 🔹 Fonction mise à jour avec transaction
-async function updateStatus(id, newStatus, userId, amount){
-  try{
-    await db.runTransaction(async (transaction) => {
-      const txRef = db.collection("withdrawals").doc(id);
-      const txDoc = await transaction.get(txRef);
+async function updateStatus(id, status, withdrawData, refund = false) {
+  const btns = document.querySelectorAll("button");
+  btns.forEach(b => b.classList.add("loading"));
+  try {
+    await db.collection("withdrawals").doc(id).update({ status });
 
-      if(!txDoc.exists) throw "Transaction inexistante";
-      const tx = txDoc.data();
-
-      if(tx.status !== "Pending") throw "Déjà traité";
-
-      transaction.update(txRef, { status: newStatus });
-
-      if(newStatus==="Failed"){
-        // remboursement automatique
-        const userRef = db.collection("users").doc(userId);
-        const userDoc = await transaction.get(userRef);
-        if(userDoc.exists){
-          const wallet = userDoc.data().wallet || {};
-          const newBalance = (wallet.balance || 0) + tx.amount;
-          const newTotalWithdrawn = (wallet.totalWithdrawn || 0) - tx.amount;
-
-          transaction.update(userRef, {
-            "wallet.balance": newBalance,
-            "wallet.totalWithdrawn": newTotalWithdrawn >=0 ? newTotalWithdrawn : 0
-          });
-        }
+    if (refund && withdrawData?.userId) {
+      const userRef = db.collection("users").doc(withdrawData.userId);
+      const userDoc = await userRef.get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        const wallet = userData.wallet || {};
+        const currentBalance = wallet.balance || 0;
+        await userRef.update({
+          "wallet.balance": currentBalance + withdrawData.amount
+        });
       }
-    });
+    }
 
-    alert("✅ Retrait mis à jour : " + newStatus);
-  }catch(e){
-    alert("❌ Erreur : " + e);
-    console.error(e);
+    alert(`✅ Statut mis à jour : ${status}`);
+    loadWithdrawals();
+  } catch (e) {
+    alert("Erreur : " + e.message);
+  } finally {
+    btns.forEach(b => b.classList.remove("loading"));
   }
 }
+
+document.getElementById("retour-btn").addEventListener("click", () => {
+  window.location.href = "dashboard.html";
+});
 </script>
 </body>
-    </html>
-  
+</html>
+
+
