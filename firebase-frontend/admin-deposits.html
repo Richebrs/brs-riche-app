@@ -2,39 +2,145 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8" />
-<title>Admin Dépôts - BRS RICHE</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>👑 Admin - Dépôts Utilisateurs</title>
+
+<!-- Librairies -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
 <style>
-body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f4f7fb;color:#222;display:flex;flex-direction:column;align-items:center;}
-header{background:#0d47a1;color:#fff;padding:14px 16px;width:100%;text-align:center;}
-main{padding:16px;width:100%;max-width:600px;}
-.card{background:#fff;padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:16px;}
-.card h2{color:#0d47a1;text-align:center;margin:0 0 12px;}
-.history-item{padding:12px;border-radius:8px;background:#fff;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
-.btn-action{margin-top:6px;padding:6px 10px;border-radius:6px;border:none;color:#fff;cursor:pointer;}
-.btn-accept{background:#2e7d32;}
-.btn-reject{background:#e53935;}
-.status-pending{color:#b8860b;font-weight:700;}
-.status-ok{color:#2e7d32;font-weight:700;}
-.status-error{color:#b71c1c;font-weight:700;}
-@media(max-width:520px){body{padding:0 8px;}}
+:root{
+  --primary:#0d47a1;
+  --danger:#d32f2f;
+  --ok:#2e7d32;
+  --bg:#f4f7fb;
+}
+body{
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:var(--bg);
+  margin:0;
+  color:#222;
+}
+header{
+  background:var(--primary);
+  color:#fff;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+}
+h1{margin:0;font-size:20px;}
+.search-bar{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+.search-bar input{
+  padding:8px 12px;
+  border-radius:8px;
+  border:none;
+  outline:none;
+  width:250px;
+}
+.search-bar select{
+  padding:8px 10px;
+  border-radius:8px;
+  border:none;
+  outline:none;
+}
+.btn-refresh{
+  background:#fff;
+  color:var(--primary);
+  border:none;
+  border-radius:6px;
+  padding:6px 12px;
+  font-weight:600;
+  cursor:pointer;
+}
+main{padding:15px;overflow-x:auto;}
+.table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+  background:#fff;
+  border-radius:8px;
+  overflow:hidden;
+  box-shadow:0 1px 5px rgba(0,0,0,0.1);
+}
+.table th,.table td{
+  padding:10px;
+  border-bottom:1px solid #eee;
+  text-align:left;
+  font-size:14px;
+}
+.table th{background:#e3f2fd;}
+.status-pending{color:#b8860b;font-weight:600;}
+.status-valid{color:var(--ok);font-weight:600;}
+.status-refused{color:var(--danger);font-weight:600;}
+.btn{
+  border:none;
+  border-radius:6px;
+  padding:6px 10px;
+  cursor:pointer;
+  font-weight:600;
+  font-size:13px;
+}
+.btn-valid{background:var(--ok);color:#fff;}
+.btn-refuse{background:var(--danger);color:#fff;}
+.btn-sort{
+  background:#fff;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+  color:var(--primary);
+}
+@media(max-width:600px){
+  .table th,.table td{font-size:12px;padding:8px;}
+}
 </style>
 </head>
+
 <body>
-<header><strong>📥 Gestion Dépôts Admin</strong></header>
-<main>
-  <div class="card history">
-    <h2>Dépôts en attente</h2>
-    <div id="deposit-list">Chargement...</div>
+<header>
+  <h1>👑 Panneau Administrateur — Dépôts</h1>
+  <div class="search-bar">
+    <input type="text" id="search" placeholder="🔍 Rechercher par email ou statut...">
+    <select id="filter-status">
+      <option value="">Tous les statuts</option>
+      <option value="En attente">En attente</option>
+      <option value="Validé">Validé</option>
+      <option value="Refusé">Refusé</option>
+    </select>
+    <button class="btn-sort" id="sort-amount">⇅ Trier par montant</button>
+    <button class="btn-refresh" onclick="window.location.reload()">🔄 Actualiser</button>
   </div>
+</header>
+
+<main>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Montant ($)</th>
+        <th>Réseau</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="deposits-list">
+      <tr><td colspan="5" style="text-align:center;color:#777;">Chargement...</td></tr>
+    </tbody>
+  </table>
 </main>
+
 <script>
-/* Firebase config */
+/* ---------------- CONFIG FIREBASE ---------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyCxna2jjk_5BKXnsCmJmwFsM388DeFUcNQ",
   authDomain: "brs-riche-2.firebaseapp.com",
@@ -44,73 +150,115 @@ const firebaseConfig = {
   appId: "1:313874599780:web:xxxxxx"
 };
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
 const db = firebase.firestore();
 
-let currentUserId = null;
-const depositList = document.getElementById('deposit-list');
+const tbody = document.getElementById("deposits-list");
+const searchInput = document.getElementById("search");
+const filterStatus = document.getElementById("filter-status");
+const sortBtn = document.getElementById("sort-amount");
+let allDeposits = [];
+let sortAsc = true;
 
-/* Render historique admin */
-function renderDeposits(snap){
-  depositList.innerHTML='';
-  if(snap.empty){ depositList.innerHTML='<div>Aucun dépôt trouvé.</div>'; return; }
-  snap.forEach(doc=>{
-    const d=doc.data();
-    const created=d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString():'';
-    const item=document.createElement('div');
-    item.className='history-item';
-    const statusLower=(d.status||'').toLowerCase();
-    const statusClass=statusLower.includes('en attente')?'status-pending':
-                      statusLower.includes('succès')?'status-ok':
-                      statusLower.includes('annulé')?'status-error':'';
-    item.innerHTML=`
-      <div><strong>Utilisateur:</strong> ${d.email}</div>
-      <div><strong>Montant:</strong> $${d.amount}</div>
-      <div><strong>Réseau:</strong> ${d.network}</div>
-      <div><strong>Hash:</strong> ${d.txHash}</div>
-      <div><strong>Status:</strong> <span class="${statusClass}">${d.status}</span></div>
-      <div><small>${created}</small></div>
-      ${d.status==="En attente" ? `
-        <button class="btn-action btn-accept" onclick="acceptDeposit('${doc.id}', ${d.amount}, '${d.userId}')">✅ Accepter</button>
-        <button class="btn-action btn-reject" onclick="rejectDeposit('${doc.id}')">❌ Refuser</button>
-      `:''}
+/* ---------------- AFFICHAGE LISTE ---------------- */
+function renderDeposits(list){
+  // mettre d'abord les dépôts "En attente"
+  const sortedList = [...list].sort((a,b)=>{
+    if(a.status==="En attente" && b.status!=="En attente") return -1;
+    if(a.status!=="En attente" && b.status==="En attente") return 1;
+    return 0;
+  });
+  tbody.innerHTML = "";
+  if(sortedList.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#777;">Aucun dépôt trouvé</td></tr>`;
+    return;
+  }
+  sortedList.forEach(d=>{
+    const statusClass = 
+      d.status === "Validé" ? "status-valid" :
+      d.status === "Refusé" ? "status-refused" : "status-pending";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${d.email||"-"}</td>
+      <td>${d.amount.toFixed(2)}</td>
+      <td>${d.network}</td>
+      <td class="${statusClass}">${d.status}</td>
+      <td>
+        ${d.status==="En attente" ? `
+          <button class="btn btn-valid" onclick="validateDeposit('${d.id}', ${d.amount}, '${d.userId}')">Valider</button>
+          <button class="btn btn-refuse" onclick="refuseDeposit('${d.id}')">Refuser</button>
+        ` : ""}
+      </td>
     `;
-    depositList.appendChild(item);
+    tbody.appendChild(tr);
   });
 }
 
-/* Accepter dépôt et créditer solde */
-window.acceptDeposit=async function(docId, amount, userId){
-  if(!confirm("Confirmer l'acceptation et créditer le solde ?")) return;
-  try{
-    // Mettre à jour le dépôt
-    await db.collection('deposits').doc(docId).update({status:"Succès"});
-    // Ajouter le solde utilisateur
-    const userRef=db.collection('users').doc(userId);
-    await db.runTransaction(async t=>{
-      const docUser=await t.get(userRef);
-      const currentBalance=docUser.exists && docUser.data().balance?docUser.data().balance:0;
-      t.set(userRef,{balance: currentBalance+amount},{merge:true});
-    });
-    alert('Dépôt accepté et solde crédité ✅');
-  }catch(e){console.error(e);alert('Erreur serveur.');}
+/* ---------------- RECHERCHE ET FILTRAGE ---------------- */
+function applyFilters(){
+  const query = searchInput.value.toLowerCase();
+  const status = filterStatus.value;
+  let filtered = allDeposits.filter(d=>{
+    const matchText = d.email.toLowerCase().includes(query) || d.status.toLowerCase().includes(query);
+    const matchStatus = status === "" || d.status === status;
+    return matchText && matchStatus;
+  });
+  renderDeposits(filtered);
 }
+searchInput.addEventListener("input", applyFilters);
+filterStatus.addEventListener("change", applyFilters);
 
-/* Refuser dépôt */
-window.rejectDeposit=async function(docId){
-  if(!confirm("Confirmer le refus du dépôt ?")) return;
-  try{
-    await db.collection('deposits').doc(docId).update({status:"Annulé"});
-    alert('Dépôt refusé ❌');
-  }catch(e){console.error(e);alert('Erreur serveur.');}
-}
-
-/* Auth admin */
-auth.onAuthStateChanged(user=>{
-  if(!user){window.location.href='login.html';return;}
-  currentUserId=user.uid;
-  db.collection('deposits').orderBy('createdAt','desc').onSnapshot(renderDeposits);
+/* ---------------- TRI ---------------- */
+sortBtn.addEventListener("click", ()=>{
+  sortAsc = !sortAsc;
+  const sorted = [...allDeposits].sort((a,b)=> sortAsc ? a.amount - b.amount : b.amount - a.amount);
+  renderDeposits(sorted);
 });
+
+/* ---------------- RECUPÉRATION EN TEMPS RÉEL ---------------- */
+db.collection("admin_deposits").orderBy("createdAt","desc").onSnapshot(snapshot=>{
+  allDeposits = [];
+  snapshot.forEach(doc=>{
+    allDeposits.push({ id:doc.id, ...doc.data() });
+  });
+  renderDeposits(allDeposits);
+});
+
+/* ---------------- ACTIONS ADMIN ---------------- */
+async function validateDeposit(id, amount, userId){
+  if(!confirm("Confirmer la validation et créditer l’utilisateur ?")) return;
+  try{
+    await db.collection("admin_deposits").doc(id).update({ status:"Validé" });
+    await db.collection("deposits").doc(id).update({ status:"Validé" });
+
+    // Crédit automatique
+    const userRef = db.collection("users").doc(userId);
+    const userDoc = await userRef.get();
+    if(userDoc.exists){
+      const oldBalance = userDoc.data().balance || 0;
+      const newBalance = oldBalance + amount;
+      await userRef.update({ balance:newBalance });
+    }
+
+    // Historique marqué
+    await db.collection("deposits").doc(id).update({ status:"Crédité" });
+    alert("✅ Dépôt validé et solde crédité !");
+  }catch(e){
+    console.error(e);
+    alert("Erreur lors de la validation.");
+  }
+}
+
+async function refuseDeposit(id){
+  if(!confirm("Refuser ce dépôt ?")) return;
+  try{
+    await db.collection("admin_deposits").doc(id).update({ status:"Refusé" });
+    await db.collection("deposits").doc(id).update({ status:"Refusé" });
+    alert("❌ Dépôt refusé avec succès.");
+  }catch(e){
+    console.error(e);
+    alert("Erreur lors du refus.");
+  }
+}
 </script>
 </body>
 </html>
